@@ -34,7 +34,7 @@ class RouteNode:
             self.neighbors[port] = cost
             i += 2
         for n in self.neighbors: 
-            self.dv[n] = [self.neighbors[n], None]
+            self.dv[n] = [self.neighbors[n], n]
 
         if i < len(sys.argv) and sys.argv[i] == "last":
             self.last = True
@@ -90,15 +90,13 @@ class RouteNode:
             port = int(port)
 
             if port != self.port:
-                if port in self.dv and c + dist < self.dv[port][0]:
-                    # shorter dist found for neighbors
-                    if port in self.neighbors:
-                        self.dv[port] = [c + dist, addr[1]]
-                    
-                    # shorter dist found for non-neighboring node
-                    else:
-                        self.dv[port][0] = c + dist
-                    updated = True 
+                # if a former path to the node is known
+                if port in self.dv:
+                    if c + dist < self.dv[port][0]:
+                        # next hop to get to sender
+                        next_hop = self.dv[addr[1]][1]
+                        self.dv[port] = [c + dist, next_hop]
+                        updated = True 
                 else:
                     # dv = [dist to neighbor + neighbor's dist to port, neighbor's port]
                     self.dv[port] = [c + dist, addr[1]]
@@ -116,7 +114,7 @@ class RouteNode:
             dist = self.dv[port][0]
             next_hop = self.dv[port][1]
             
-            if next_hop:
+            if next_hop and next_hop != int(port):
                 msg = "- (" + str(dist) + ") -> Node " + str(port) + "; Next hop -> Node " + str(next_hop)
             else: 
                 msg = "- (" + str(dist) + ") -> Node " + str(port)
