@@ -77,13 +77,13 @@ class RouteNode:
         sock.sendto(msg, (self.ip, highest_port))
         print("[" + ts + "]", "Link value message sent from Node", self.port, "to Node", highest_port)
 
-    def dv_broadcast(self, poison=False):
+    def dv_broadcast(self):
         send_dv = self.dv.copy()
         table = b"TAB\n" + json.dumps(send_dv).encode() + b"\n"
         self.sent = True
 
         for n in self.neighbors:  
-            if poison:
+            if self.mode == "p":
                 send_dv = self.dv.copy()
                 for port in self.dv:
                     # if next hop to port is through n, poison the path back
@@ -93,7 +93,6 @@ class RouteNode:
                 table = b"TAB\n" + json.dumps(send_dv).encode() + b"\n"
 
             print("Message sent from Node", self.port, "to Node", n)
-            print("  ", send_dv)
             sock.sendto(table, (self.ip, n))
 
     def dv_recv(self):
@@ -109,7 +108,6 @@ class RouteNode:
                     table = json.loads(body[i])
                     self.dv_compute(table, addr)
                     self.most_recent[addr[1]] = table
-                    print(self.most_recent)
                     print("Message received at Node", self.port, "from Node", addr[1])
                 
                 elif body[i] == "COS":  # Cost change control message
@@ -141,14 +139,12 @@ class RouteNode:
                     if alt_dist < cost:
                         self.dv[sender] = [alt_dist, port]
                         updated = True
-                        print('cost updated', self.dv[sender])
                     else: 
                         self.dv[sender] = [cost, sender]
                         updated = True
 
         if updated:
-            self.dv_broadcast(poison=(self.mode == "p"))
-            print("broadcast from cost update")
+            self.dv_broadcast()
             self.print_routing()
         return updated
             
@@ -157,7 +153,7 @@ class RouteNode:
         sender = addr[1]
         c = self.dv[sender][0]  # distance between neighbor port and selfs
         updated = False
-        print("  Received table from", addr,":",table)
+        #print("  Received table from", addr,":",table)
 
         for port in table:
             dist = c + table[port][0]
@@ -167,7 +163,6 @@ class RouteNode:
                 # if distance to port in new table is unknown
                 if port not in self.dv:
                     self.dv[port] = [dist, sender]  # s[dist to neighbor + neighbor's dist to port, neighbor's port]
-                    print("broadcast because port not in dv")
                     updated = True
 
                 # if a former path to the node is known
@@ -178,34 +173,27 @@ class RouteNode:
                         updated = True
 
                     # If a shorter non-direct path is found
-                    if dist < self.dv[port][0]: 
+                    elif dist < self.dv[port][0]: 
                         next_hop = self.dv[sender][1]   # next hop to get to sender
                         self.dv[port] = [dist, next_hop]
-                        print("broadcast bc shorter path found")
                         updated = True
 
                     # if the former shortest path got longer: the sender == next hop for a port in the table
                     elif dist > self.dv[port][0] and sender == self.dv[port][1]:
-                        print("neighbor cost", self.neighbors[port], "neighbor port", port)
                         if dist < self.neighbors[port]:
                             self.dv[port] = [dist, sender] 
                         else:
                             self.dv[port] = [self.neighbors[port], port]
-                        print("broadcast because shortest path got longer")
                         updated = True
-
-                    # sending node routes through receiver to get to a diff node
-                    '''elif table[str(port)][1] == self.port:
-                        self.dv_broadcast(dest=port, poison=True)'''
 
         if updated or not self.sent:
             self.sent = True
             self.print_routing()
-            self.dv_broadcast(poison=(self.mode == "p"))
+            self.dv_broadcast()
         return updated
 
     def print_routing(self):
-        ts = str(time.time())   #datetime.datetime.now().strftime("%m-%d-%Y %H:%M:%S")
+        ts = str(round(time.time(), 3))   #datetime.datetime.now().strftime("%m-%d-%Y %H:%M:%S")
         print("[" + ts + "]", "Node", self.port, "Routing Table")
         for port in self.dv:
             dist = self.dv[port][0]
