@@ -6,6 +6,7 @@ import datetime
 import threading
 import math
 
+ROUTING_INTERVAL = 2
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 class RouteNode:
@@ -15,7 +16,10 @@ class RouteNode:
         self.sent = False
         self.cost_change = 0
         self.dv = {}            # distance vector in format { port : [cost, next_hop] }
-        self.most_recent = {}
+        self.most_recent = {}   # last distance vector received from each port
+        self.topology = []
+        self.recvd = {}         # Packets received storerd as {seq num : origin port}
+        self.routing = {}
 
     def run(self): 
         if len(sys.argv) < 3:
@@ -23,7 +27,7 @@ class RouteNode:
         
         algo = sys.argv[1]              # Algoorithm to use
         mode = sys.argv[2]              # Regular or Poisoned Reverse
-        update_interval = sys.argv[3]   # 
+        self.update_interval = sys.argv[3]   # 
         self.port = int(sys.argv[4])    # Local port
         self.ip = "127.0.0.1"
         self.validate_port(self.port)
@@ -35,27 +39,98 @@ class RouteNode:
             cost = int(sys.argv[i + 1])
             self.neighbors[port] = cost
             i += 2
-        for n in self.neighbors: 
-            self.dv[n] = [self.neighbors[n], n]
 
         if i < len(sys.argv) and sys.argv[i] == "last":
             self.last = True
             i += 1
         if i < len(sys.argv):
             self.cost_change = int(sys.argv[i])
+
+        sock.bind((self.ip, self.port))    # socket listening
         
         # run distance vector algorithm
         if algo == "dv":
+            for n in self.neighbors: 
+                self.dv[n] = [self.neighbors[n], n]
+
             if mode == "r" or mode == "p":
                 self.mode = mode
                 self.distance_vector()
             else:
                 self.err_msg("Usage: Mode must be 'r' (regular) or 'p' (poisoned reverse)")
+        
+        elif algo == "ls":
+            if mode != "r":
+                self.err_msg("Usage: The link-state algorithm can only be run in regular mode, 'r'.")
+            self.link_state()
+        
         else:
-            self.err_msg("Usage: Algorithm must be 'dv' or ... ")
+            self.err_msg("Usage: Algorithm must be 'dv' or 'ls'.")
+
+    def link_state(self):
+        if self.last:
+            self.sent = True
+            self.ls_broadcast()
+        
+        recv_th = threading.Thread(target=self.ls_recv)
+        recv_th.start()
+    
+    def ls_recv(self):
+        while True:
+            # Receives routing table from addr
+            body, addr = sock.recvfrom(2048)
+            body = body.decode().split("\n")
+            origin = int(body[1])
+            unproc_lsa = json.loads(body[2])
+            seq = float(body[3])
+            lsa = {}
+
+            for neighbor in unproc_lsa:    # convert keys of JSON to int
+                lsa[int(neighbor)] = unproc_lsa[neighbor]
+
+            ts = str(round(time.time(), 3))
+            if seq in self.recvd and self.recvd[seq] == origin:
+                print("[" + ts + "]", "DUPLICATE LSA packet received AND DROPPED:")
+                print("- LSA of node", origin)
+                print("- Sequence number", seq)
+                print("- Received from", addr[1])
+            else:
+                self.recvd[seq] = origin
+                print("[" + ts + "]", "LSA of node", origin, "with sequence number", seq, "received from Node", addr[1])
+                self.update_topology(lsa, origin, seq, addr[1])
+        
+    def ls_broadcast(self): 
+        seq = str(round(time.time(), 3))
+        lsa = b"LSA\n" + str(self.port).encode() + b"\n" +  json.dumps(self.neighbors).encode() + b"\n" + seq.encode() + b"\n"
+        self.sent = True
+
+        for n in self.neighbors:  
+            ts = str(round(time.time(), 3))
+            print("[" + ts + "]", "LSA of Node", self.port, "with sequence number", seq, "sent to Node", n)
+            sock.sendto(lsa, (self.ip, n))
+
+    def update_topology(self, lsa, origin, seq, sender):
+        # topology stored as list of tuples [(lower_port, higher_port, cost), ... ]   
+        for neighbor in lsa:
+            lower_port = origin if origin < neighbor else neighbor
+            higher_port = origin if origin > neighbor else neighbor
+            tup = (lower_port, higher_port, lsa[neighbor])
+            self.topology.append(tup)
+        
+        self.topology.sort(key=lambda tup: tup[0])
+        self.print_topology()
+    
+
+    def print_topology(self):
+        ts = str(round(time.time(), 3))
+        print("[" + ts + "]", "Node", self.port, "Network Topology")
+        for link in self.topology:
+            print("- (" + str(link[2]) + ")", "from Node", link[0], "to Node", link[1])
+
+
+    ######################################################
 
     def distance_vector(self):
-        sock.bind((self.ip, self.port))    # socket listening
         if self.last:
             self.sent = True
             self.dv_broadcast()
@@ -70,7 +145,7 @@ class RouteNode:
         self.neighbors[highest_port] = self.cost_change
 
         self.dv[highest_port][0] = self.cost_change
-        ts = str(time.time())
+        ts = str(round(time.time(), 3))
         print("[" + ts + "]", "Node", highest_port, "cost updated to", self.cost_change)
         
         msg = ("COS\n" + str(self.cost_change) + "\n").encode()
@@ -116,7 +191,7 @@ class RouteNode:
                     cost = int(body[i])
                     self.neighbors[sender] = cost
 
-                    ts = str(time.time())
+                    ts = str(round(time.time(), 3))
                     print("[" + ts + "]", "Node", sender, "cost updated to", cost)
                     print("[" + ts + "]", "Link value message received at Node", self.port, "from Node", sender)
         
@@ -145,7 +220,7 @@ class RouteNode:
 
         if updated:
             self.dv_broadcast()
-            self.print_routing()
+            self.print_routing(self.dv)
         return updated
             
     # Compute to change own DV based off table from addr
@@ -188,23 +263,25 @@ class RouteNode:
 
         if updated or not self.sent:
             self.sent = True
-            self.print_routing()
+            self.print_routing(self.dv)
             self.dv_broadcast()
         return updated
 
-    def print_routing(self):
+    def print_routing(self, table):
         ts = str(round(time.time(), 3))   #datetime.datetime.now().strftime("%m-%d-%Y %H:%M:%S")
         print("[" + ts + "]", "Node", self.port, "Routing Table")
-        for port in self.dv:
-            dist = self.dv[port][0]
-            next_hop = self.dv[port][1]
+        for port in table:
+            dist = table[port][0]
+            next_hop = table[port][1]
             
             if next_hop and next_hop != int(port):
                 msg = "- (" + str(dist) + ") -> Node " + str(port) + "; Next hop -> Node " + str(next_hop)
             else: 
                 msg = "- (" + str(dist) + ") -> Node " + str(port)
             print(msg)
-
+    
+    #######################################################
+    
     def err_msg(self, msg):
         print(msg)
         sys.exit(1)
