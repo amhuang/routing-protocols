@@ -78,8 +78,8 @@ class RouteNode:
     def ls_recv(self):
         while True:
             # Receives routing table from addr
-            body, addr = sock.recvfrom(2048)
-            body = body.decode().split("\n")
+            content, addr = sock.recvfrom(2048)
+            body = content.decode().split("\n")
             origin = int(body[1])
             unproc_lsa = json.loads(body[2])
             seq = float(body[3])
@@ -98,6 +98,7 @@ class RouteNode:
                 self.recvd[seq] = origin
                 print("[" + ts + "]", "LSA of node", origin, "with sequence number", seq, "received from Node", addr[1])
                 self.update_topology(lsa, origin, seq, addr[1])
+                self.propagate_lsa(content, addr[1])
         
     def ls_broadcast(self): 
         seq = str(round(time.time(), 3))
@@ -111,17 +112,18 @@ class RouteNode:
 
     def update_topology(self, lsa, origin, seq, sender):
         # topology stored as list of tuples [(lower_port, higher_port, cost), ... ]   
+        updated = False
         for neighbor in lsa:
             lower_port = origin if origin < neighbor else neighbor
             higher_port = origin if origin > neighbor else neighbor
             tup = (lower_port, higher_port) 
             if tup not in self.topology:
                 self.topology[tup] = lsa[neighbor]
+                updated = True
         
-        
-        self.print_topology()
+        if updated:
+            self.print_topology()
     
-
     def print_topology(self):
         ts = str(round(time.time(), 3))
         print("[" + ts + "]", "Node", self.port, "Network Topology")
@@ -129,6 +131,12 @@ class RouteNode:
         sorted_keys = sorted(self.topology, key=lambda tup: tup[0])
         for link in sorted_keys:
             print("- (" + str(self.topology[link]) + ")", "from Node", link[0], "to Node", link[1])
+
+    def propagate_lsa(self, content, sender):
+        # Content should be byte stream formatted with all LSA data
+        for n in self.neighbors:
+            if n != sender:
+                sock.sendto(content, (self.ip, n))
 
     ######################################################
 
