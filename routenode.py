@@ -5,6 +5,7 @@ import time
 import datetime
 import threading
 import math
+import random
 
 ROUTING_INTERVAL = 2
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -23,14 +24,15 @@ class RouteNode:
         self.topology = {}
         self.recvd = {}         # Packets received storerd as {seq num : origin port}
         self.routing = {}
+        self.activated = False
 
     def run(self): 
         if len(sys.argv) < 3:
             self.err_msg("Usage: python3 routenode.py dv <r/p> <update-interval> <local-port> <neighbor1-port> <cost-1> <neighbor2-port> <cost-2> ... [last] [<cost-change>]")
         
-        algo = sys.argv[1]              # Algoorithm to use
+        algo = sys.argv[1]              # Algorithm to use (link state or distance vector)
         mode = sys.argv[2]              # Regular or Poisoned Reverse
-        self.update_interval = sys.argv[3]   # 
+        self.update_interval = int(sys.argv[3]) + random.uniform(0,1)   # for link state 
         self.port = int(sys.argv[4])    # Local port
         self.ip = "127.0.0.1"
         self.validate_port(self.port)
@@ -73,9 +75,12 @@ class RouteNode:
     ####################### LINK STATE ALGORITHM ######################
 
     def link_state(self):
+        self.seq = str(round(time.time(), 3))
+        self.lsa = b"LSA\n" + str(self.port).encode() + b"\n" +  json.dumps(self.neighbors).encode() + b"\n" + self.seq.encode() + b"\n"
+        
         if self.last:
             self.sent = True
-            self.ls_broadcast()
+            self.ls_broadcast(self.lsa)
         
         recv_th = threading.Thread(target=self.ls_recv)
         recv_th.start()
@@ -104,15 +109,16 @@ class RouteNode:
                 print("[" + ts + "]", "LSA of node", origin, "with sequence number", seq, "received from Node", addr[1])
                 self.update_topology(lsa, origin, seq, addr[1])
                 self.propagate_lsa(content, addr[1])
+                if not self.activated:
+                    self.activated = True
+                    self.ls_broadcast(self.lsa)
         
-    def ls_broadcast(self): 
-        seq = str(round(time.time(), 3))
-        lsa = b"LSA\n" + str(self.port).encode() + b"\n" +  json.dumps(self.neighbors).encode() + b"\n" + seq.encode() + b"\n"
+    def ls_broadcast(self, lsa): 
         self.sent = True
 
         for n in self.neighbors:  
             ts = str(round(time.time(), 3))
-            print("[" + ts + "]", "LSA of Node", self.port, "with sequence number", seq, "sent to Node", n)
+            print("[" + ts + "]", "LSA of Node", self.port, "with sequence number", self.seq, "sent to Node", n)
             sock.sendto(lsa, (self.ip, n))
 
     def update_topology(self, lsa, origin, seq, sender):
@@ -133,7 +139,7 @@ class RouteNode:
         ts = str(round(time.time(), 3))
         print("[" + ts + "]", "Node", self.port, "Network Topology")
         
-        sorted_keys = sorted(self.topology, key=lambda tup: tup[0])
+        sorted_keys = sorted(self.topology, key=lambda tup: (tup[0], tup[1]))
         for link in sorted_keys:
             print("- (" + str(self.topology[link]) + ")", "from Node", link[0], "to Node", link[1])
 
