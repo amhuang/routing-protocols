@@ -17,7 +17,7 @@ class RouteNode:
         self.cost_change = 0
         self.dv = {}            # distance vector in format { port : [cost, next_hop] }
         self.most_recent = {}   # last distance vector received from each port
-        self.topology = []
+        self.topology = {}
         self.recvd = {}         # Packets received storerd as {seq num : origin port}
         self.routing = {}
 
@@ -114,19 +114,21 @@ class RouteNode:
         for neighbor in lsa:
             lower_port = origin if origin < neighbor else neighbor
             higher_port = origin if origin > neighbor else neighbor
-            tup = (lower_port, higher_port, lsa[neighbor])
-            self.topology.append(tup)
+            tup = (lower_port, higher_port) 
+            if tup not in self.topology:
+                self.topology[tup] = lsa[neighbor]
         
-        self.topology.sort(key=lambda tup: tup[0])
+        
         self.print_topology()
     
 
     def print_topology(self):
         ts = str(round(time.time(), 3))
         print("[" + ts + "]", "Node", self.port, "Network Topology")
-        for link in self.topology:
-            print("- (" + str(link[2]) + ")", "from Node", link[0], "to Node", link[1])
-
+        
+        sorted_keys = sorted(self.topology, key=lambda tup: tup[0])
+        for link in sorted_keys:
+            print("- (" + str(self.topology[link]) + ")", "from Node", link[0], "to Node", link[1])
 
     ######################################################
 
