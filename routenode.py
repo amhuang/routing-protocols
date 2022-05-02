@@ -19,11 +19,13 @@ class RouteNode:
         self.last = False
         self.sent = False
         self.cost_change = None
-        self.dv = {}            # distance vector in format { port : [cost, next_hop], ... }
+        self.routing = {}       # routing table in format { port : [cost, next_hop], ... }
         self.most_recent = {}   # last distance vector received from each port
+
+        self.nodes = set()      # Nodes in the network
         self.topology = {}      # Topology of graph with link as keys and costs as values. Format { (lower_port, higher_port) : cost, ... }
         self.recvd = {}         # Packets received storerd as {seq num : origin port, ... }
-        self.routing = {}       # Routing table
+        self.routing_computed = False
 
     def run(self): 
         if len(sys.argv) < 3:
@@ -55,7 +57,7 @@ class RouteNode:
         # run distance vector algorithm
         if algo == "dv":
             for n in self.neighbors: 
-                self.dv[n] = [self.neighbors[n], n]
+                self.routing[n] = [self.neighbors[n], n]
 
             if mode == "r" or mode == "p":
                 self.mode = mode
@@ -71,7 +73,7 @@ class RouteNode:
         else:
             self.err_msg("Usage: Algorithm must be 'dv' or 'ls'.")
 
-    ####################### LINK STATE ALGORITHM ######################
+    ######################### LINK STATE ALGORITHM #######################
 
     def link_state(self):
         self.seq = str(round(time.time(), 3))
@@ -109,10 +111,12 @@ class RouteNode:
                 self.recvd[seq] = origin
                 print("[" + ts + "]", "LSA of node", origin, "with sequence number", seq, "received from Node", addr[1])
                 self.update_topology(lsa, origin, seq, addr[1])
+                print("broadcast lsa from", addr[1])
                 self.ls_broadcast(content, addr[1])
                 
                 if not self.sent:
                     self.sent = True
+                    print("self.sent broadcast")
                     self.ls_broadcast(self.lsa)
 
                     if not self.last:
@@ -141,6 +145,8 @@ class RouteNode:
         
         if updated:
             self.print_topology()
+            if self.routing_computed:
+                self.compute_routing()
     
     def print_topology(self):
         ts = str(round(time.time(), 3))
@@ -152,18 +158,81 @@ class RouteNode:
     
     # Starts and stops routing interval and update interval timers
     def ls_timers(self):
-        routing_th = threading.Timer(ROUTING_INTERVAL, self.dijkstra)
+        routing_th = threading.Timer(ROUTING_INTERVAL, self.compute_routing)
         routing_th.start()
         update_th = threading.Thread(target=self.perpetual_update)
         update_th.start()
 
-    def dijkstra(self):
-        pass
+    # Create adjacency list from self.topology links
+    def get_adj_table(self):
+        adj = {}
+        for link in self.topology:
+            if link[0] not in adj:
+                adj[link[0]] = []
+            if link[1] not in adj:
+                adj[link[1]] = []
+            adj[link[0]].append((link[1], self.topology[link]))
+            adj[link[1]].append((link[0], self.topology[link]))
+        return adj
+
+    def compute_routing(self): 
+        '''
+        DIJKSTRA'S ALGO
+        Routing table in format { port : [cost, next_hop], ... }
+        Topology in format { (lower_port, higher_port) : cost, ... }
+        '''
+
+        self.routing_computed = True
+        adj = self.get_adj_table()
+        
+        # Initialization
+        visited = { self.port }
+        unvisited = set()
+        for node in adj:
+            if node != self.port:
+                unvisited.add(node)
+
+            if node in self.neighbors:
+                self.routing[node] = (self.neighbors[node], node)
+            elif node != self.port:
+                self.routing[node] = (math.inf, None)
+
+        # Loop
+        while len(unvisited) > 0:
+            min_node = min(unvisited, key=lambda x: self.routing[x][0])
+            print("\nmin_node", min_node, self.routing[min_node][0])
+            unvisited.remove(min_node)
+            visited.add(min_node)
+
+            min_neighbors = adj[min_node]
+            print("min_neighbors", min_neighbors)
+            for n in min_neighbors:
+                neighbor = n[0]
+                dist = n[1]
+                print("neighbor", neighbor, "dist", dist)
+
+                if neighbor not in visited:
+                    # dist to min unvisited node + edge between min_node and its neighbor
+                    edge = (min_node, neighbor) if min_node < neighbor else (neighbor, min_node)
+                    c = self.topology[edge]
+                    
+                    alt_dist = self.routing[min_node][0] + c
+                    print("\tedge", edge, "c", c, "alt_dist", alt_dist, "orig dist", self.routing[neighbor][0])
+
+                    if alt_dist < self.routing[neighbor][0]:
+                        # first hop to get to min_node
+                        next_hop = self.routing[min_node][1]        
+                        self.routing[neighbor] = (alt_dist, next_hop)
+
+                    print("\tself.routing", self.routing)
+        self.print_routing()
+        
 
     # Thread which sends the node's LSA out every self.update_interval
     def perpetual_update(self):
         while True:
             time.sleep(self.update_interval)
+            print("broadcast self perpetuals")
             self.ls_broadcast(self.lsa)
 
     ######################### DISTANCE VECTOR ######################
@@ -171,19 +240,19 @@ class RouteNode:
     def distance_vector(self):
         if self.last:
             self.sent = True
-            self.dv_broadcast()
+            self.routing_broadcast()
             if self.cost_change:
                 t = threading.Timer(2.0, self.send_cost_change)
                 t.start()
 
-        recv_th = threading.Thread(target=self.dv_recv)
+        recv_th = threading.Thread(target=self.routing_recv)
         recv_th.start()
     
     def send_cost_change(self):
-        highest_port = max(self.dv)
+        highest_port = max(self.routing)
         self.neighbors[highest_port] = self.cost_change
 
-        self.dv[highest_port][0] = self.cost_change
+        self.routing[highest_port][0] = self.cost_change
         ts = str(round(time.time(), 3))
         print("[" + ts + "]", "Node", highest_port, "cost updated to", self.cost_change)
         
@@ -192,16 +261,16 @@ class RouteNode:
         print("[" + ts + "]", "Link value message sent from Node", self.port, "to Node", highest_port)
 
     def dv_broadcast(self):
-        send_dv = self.dv.copy()
+        send_dv = self.routing.copy()
         table = b"TAB\n" + json.dumps(send_dv).encode() + b"\n"
         self.sent = True
 
         for n in self.neighbors:  
             if self.mode == "p":
-                send_dv = self.dv.copy()
-                for port in self.dv:
+                send_dv = self.routing.copy()
+                for port in self.routing:
                     # if next hop to port is through n, poison the path back
-                    if port != n and self.dv[port][1] == n:
+                    if port != n and self.routing[port][1] == n:
                         send_dv[port][0] = math.inf
 
                 table = b"TAB\n" + json.dumps(send_dv).encode() + b"\n"
@@ -220,7 +289,7 @@ class RouteNode:
                 if body[i] == "TAB":
                     i += 1
                     table = json.loads(body[i])
-                    self.dv_compute(table, addr)
+                    self.routing_compute(table, addr)
                     self.most_recent[addr[1]] = table
                     print("Message received at Node", self.port, "from Node", addr[1])
                 
@@ -242,30 +311,30 @@ class RouteNode:
         updated = False
 
         # if sender is an immediate neighbor
-        if self.dv[sender][1] == sender:
+        if self.routing[sender][1] == sender:
             for port in self.most_recent:
                 if port != sender:
                     # if most recent table received says there's a shorter way to Y, loop through most recent tables received
                     table = self.most_recent[port]
 
                     # most recent distance of neighbor to update sender + distance to neighbor
-                    alt_dist = table[str(sender)][0] + self.dv[port][0]
+                    alt_dist = table[str(sender)][0] + self.routing[port][0]
                     if alt_dist < cost:
-                        self.dv[sender] = [alt_dist, port]
+                        self.routing[sender] = [alt_dist, port]
                         updated = True
                     else: 
-                        self.dv[sender] = [cost, sender]
+                        self.routing[sender] = [cost, sender]
                         updated = True
 
         if updated:
-            self.dv_broadcast()
-            self.print_routing(self.dv)
+            self.routing_broadcast()
+            self.print_routing()
         return updated
             
     # Compute to change own DV based off table from addr
     def dv_compute(self, table, addr):
         sender = addr[1]
-        c = self.dv[sender][0]  # distance between neighbor port and selfs
+        c = self.routing[sender][0]  # distance between neighbor port and selfs
         updated = False
         #print("  Received table from", addr,":",table)
 
@@ -275,45 +344,45 @@ class RouteNode:
             
             if port != self.port:
                 # if distance to port in new table is unknown
-                if port not in self.dv:
-                    self.dv[port] = [dist, sender]  # s[dist to neighbor + neighbor's dist to port, neighbor's port]
+                if port not in self.routing:
+                    self.routing[port] = [dist, sender]  # s[dist to neighbor + neighbor's dist to port, neighbor's port]
                     updated = True
 
                 # if a former path to the node is known
-                elif port in self.dv:
+                elif port in self.routing:
                     # If direct path is shortest
-                    if port in self.neighbors and self.neighbors[port] < dist and self.neighbors[port] < self.dv[port][0]:
-                        self.dv[port] = [self.neighbors[port], port]
+                    if port in self.neighbors and self.neighbors[port] < dist and self.neighbors[port] < self.routing[port][0]:
+                        self.routing[port] = [self.neighbors[port], port]
                         updated = True
 
                     # If a shorter non-direct path is found
-                    elif dist < self.dv[port][0]: 
-                        next_hop = self.dv[sender][1]   # next hop to get to sender
-                        self.dv[port] = [dist, next_hop]
+                    elif dist < self.routing[port][0]: 
+                        next_hop = self.routing[sender][1]   # next hop to get to sender
+                        self.routing[port] = [dist, next_hop]
                         updated = True
 
                     # if the former shortest path got longer: the sender == next hop for a port in the table
-                    elif dist > self.dv[port][0] and sender == self.dv[port][1]:
+                    elif dist > self.routing[port][0] and sender == self.routing[port][1]:
                         if dist < self.neighbors[port]:
-                            self.dv[port] = [dist, sender] 
+                            self.routing[port] = [dist, sender] 
                         else:
-                            self.dv[port] = [self.neighbors[port], port]
+                            self.routing[port] = [self.neighbors[port], port]
                         updated = True
 
         if updated or not self.sent:
             self.sent = True
-            self.print_routing(self.dv)
-            self.dv_broadcast()
+            self.print_routing()
+            self.routing_broadcast()
         return updated
 
-    def print_routing(self, table):
+    def print_routing(self):
         ts = str(round(time.time(), 3))   #datetime.datetime.now().strftime("%m-%d-%Y %H:%M:%S")
         print("[" + ts + "]", "Node", self.port, "Routing Table")
-        sorted_keys = sorted(table)
+        sorted_keys = sorted(self.routing)
 
         for port in sorted_keys:
-            dist = table[port][0]
-            next_hop = table[port][1]
+            dist = self.routing[port][0]
+            next_hop = self.routing[port][1]
             
             if next_hop and next_hop != int(port):
                 msg = "- (" + str(dist) + ") -> Node " + str(port) + "; Next hop -> Node " + str(next_hop)
