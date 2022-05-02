@@ -7,7 +7,7 @@ import threading
 import math
 import random
 
-ROUTING_INTERVAL = 2
+ROUTING_INTERVAL = 3
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 class RouteNode:
@@ -19,12 +19,11 @@ class RouteNode:
         self.last = False
         self.sent = False
         self.cost_change = None
-        self.dv = {}            # distance vector in format { port : [cost, next_hop] }
+        self.dv = {}            # distance vector in format { port : [cost, next_hop], ... }
         self.most_recent = {}   # last distance vector received from each port
-        self.topology = {}
-        self.recvd = {}         # Packets received storerd as {seq num : origin port}
-        self.routing = {}
-        self.activated = False
+        self.topology = {}      # Topology of graph with link as keys and costs as values. Format { (lower_port, higher_port) : cost, ... }
+        self.recvd = {}         # Packets received storerd as {seq num : origin port, ... }
+        self.routing = {}       # Routing table
 
     def run(self): 
         if len(sys.argv) < 3:
@@ -81,11 +80,13 @@ class RouteNode:
         if self.last:
             self.sent = True
             self.ls_broadcast(self.lsa)
-        
+            self.ls_timers()
+
         recv_th = threading.Thread(target=self.ls_recv)
         recv_th.start()
     
     def ls_recv(self):
+        global ROUTING_INTERVAL
         while True:
             # Receives routing table from addr
             content, addr = sock.recvfrom(2048)
@@ -108,15 +109,21 @@ class RouteNode:
                 self.recvd[seq] = origin
                 print("[" + ts + "]", "LSA of node", origin, "with sequence number", seq, "received from Node", addr[1])
                 self.update_topology(lsa, origin, seq, addr[1])
-                self.propagate_lsa(content, addr[1])
-                if not self.activated:
-                    self.activated = True
+                self.ls_broadcast(content, addr[1])
+                
+                if not self.sent:
+                    self.sent = True
                     self.ls_broadcast(self.lsa)
-        
-    def ls_broadcast(self, lsa): 
-        self.sent = True
 
-        for n in self.neighbors:  
+                    if not self.last:
+                        self.ls_timers()
+    
+    def ls_broadcast(self, lsa, sender=None): 
+        # lsa should be byte stream formatted with all LSA data
+        for n in self.neighbors:
+            if sender and sender == n:
+                next
+
             ts = str(round(time.time(), 3))
             print("[" + ts + "]", "LSA of Node", self.port, "with sequence number", self.seq, "sent to Node", n)
             sock.sendto(lsa, (self.ip, n))
@@ -142,12 +149,22 @@ class RouteNode:
         sorted_keys = sorted(self.topology, key=lambda tup: (tup[0], tup[1]))
         for link in sorted_keys:
             print("- (" + str(self.topology[link]) + ")", "from Node", link[0], "to Node", link[1])
+    
+    # Starts and stops routing interval and update interval timers
+    def ls_timers(self):
+        routing_th = threading.Timer(ROUTING_INTERVAL, self.dijkstra)
+        routing_th.start()
+        update_th = threading.Thread(target=self.perpetual_update)
+        update_th.start()
 
-    def propagate_lsa(self, content, sender):
-        # Content should be byte stream formatted with all LSA data
-        for n in self.neighbors:
-            if n != sender:
-                sock.sendto(content, (self.ip, n))
+    def dijkstra(self):
+        pass
+
+    # Thread which sends the node's LSA out every self.update_interval
+    def perpetual_update(self):
+        while True:
+            time.sleep(self.update_interval)
+            self.ls_broadcast(self.lsa)
 
     ######################### DISTANCE VECTOR ######################
 
