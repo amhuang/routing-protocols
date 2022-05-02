@@ -1,14 +1,17 @@
 python3 routenode.py dv <r/p> <update-interval> <local-port> <neighbor1-port> <cost-1> <neighbor2-port> <cost-2> .. [last][cost-change]
 
+Tests for DV with no poison reverse
 python3 routenode.py dv r [any-num] 1111 2222 1 3333 50
 python3 routenode.py dv r [any-num] 2222 1111 1 3333 2 4444 8
 python3 routenode.py dv r [any-num] 3333 1111 50 2222 2 4444 5
 python3 routenode.py dv r [any-num] 4444 2222 8 3333 5 last
 
+Tests for DV with no poison reverse
 python3 routenode.py dv r [any-num] 1111 2222 1 3333 50
 python3 routenode.py dv r [any-num] 2222 1111 1 3333 2
 python3 routenode.py dv r [any-num] 3333 1111 50 2222 2 last 60
 
+Tests for poison reverse
 python3 routenode.py dv p [any-num] 1111 2222 1 3333 50
 python3 routenode.py dv p [any-num] 2222 1111 1 3333 2
 python3 routenode.py dv p [any-num] 3333 1111 50 2222 2 last 60

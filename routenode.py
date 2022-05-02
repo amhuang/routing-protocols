@@ -10,11 +10,14 @@ ROUTING_INTERVAL = 2
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 class RouteNode:
+
+    ########################## INITIALIZATION #########################
+
     def __init__(self): 
         self.neighbors = {}     # {port : cost}
         self.last = False
         self.sent = False
-        self.cost_change = 0
+        self.cost_change = None
         self.dv = {}            # distance vector in format { port : [cost, next_hop] }
         self.most_recent = {}   # last distance vector received from each port
         self.topology = {}
@@ -66,6 +69,8 @@ class RouteNode:
         
         else:
             self.err_msg("Usage: Algorithm must be 'dv' or 'ls'.")
+
+    ####################### LINK STATE ALGORITHM ######################
 
     def link_state(self):
         if self.last:
@@ -138,14 +143,15 @@ class RouteNode:
             if n != sender:
                 sock.sendto(content, (self.ip, n))
 
-    ######################################################
+    ######################### DISTANCE VECTOR ######################
 
     def distance_vector(self):
         if self.last:
             self.sent = True
             self.dv_broadcast()
-            t = threading.Timer(2, self.send_cost_change)
-            t.start()
+            if self.cost_change:
+                t = threading.Timer(2.0, self.send_cost_change)
+                t.start()
 
         recv_th = threading.Thread(target=self.dv_recv)
         recv_th.start()
@@ -253,7 +259,7 @@ class RouteNode:
                 # if a former path to the node is known
                 elif port in self.dv:
                     # If direct path is shortest
-                    if self.neighbors[port] < dist and self.neighbors[port] < self.dv[port][0]:
+                    if port in self.neighbors and self.neighbors[port] < dist and self.neighbors[port] < self.dv[port][0]:
                         self.dv[port] = [self.neighbors[port], port]
                         updated = True
 
@@ -280,7 +286,9 @@ class RouteNode:
     def print_routing(self, table):
         ts = str(round(time.time(), 3))   #datetime.datetime.now().strftime("%m-%d-%Y %H:%M:%S")
         print("[" + ts + "]", "Node", self.port, "Routing Table")
-        for port in table:
+        sorted_keys = sorted(table)
+
+        for port in sorted_keys:
             dist = table[port][0]
             next_hop = table[port][1]
             
@@ -290,7 +298,7 @@ class RouteNode:
                 msg = "- (" + str(dist) + ") -> Node " + str(port)
             print(msg)
     
-    #######################################################
+    ######################### GENERAL FUNCTIONS ########################
     
     def err_msg(self, msg):
         print(msg)
