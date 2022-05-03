@@ -85,8 +85,9 @@ class RouteNode:
         print("[" + self.get_ts() + "]", "Link value message sent from Node", self.port, "to Node", highest_port)
 
         if self.algo == "dv":
-            # ```` Do i need this?? seems wrong .... 
-            self.routing[highest_port][0] = self.cost_change
+            #self.routing[highest_port][0] = self.cost_change
+            #self.print_routing()
+            self.dv_cost_update(self.port, self.cost_change, receiver=highest_port) 
         
         elif self.algo == "ls":   # Redefine LSA
             self.make_lsa()
@@ -100,12 +101,6 @@ class RouteNode:
 
             # Recompute routing table
             self.compute_routing()
-
-    def make_lsa(self):
-        self.seq = round(time.time(), 6)
-        self.lsa = b"LSA\n" + str(self.port).encode() + b"\n" + json.dumps(self.neighbors).encode() + b"\n" + str(self.seq).encode()
-        self.recvd[self.seq] = self.port
-
 
     def recv_cost_change(self, sender, cost):
         self.neighbors[sender] = cost
@@ -127,6 +122,11 @@ class RouteNode:
             
             # Recompute routing table
             self.compute_routing()
+
+    def make_lsa(self):
+        self.seq = round(time.time(), 6)
+        self.lsa = b"LSA\n" + str(self.port).encode() + b"\n" + json.dumps(self.neighbors).encode() + b"\n" + str(self.seq).encode()
+        self.recvd[self.seq] = self.port
 
     ######################### LINK STATE ALGORITHM #######################
 
@@ -345,26 +345,42 @@ class RouteNode:
                 cost = int(body[1])
                 self.recv_cost_change(sender, cost)
 
-    def dv_cost_update(self, sender, cost):
+    def dv_cost_update(self, sender, cost, receiver=None):
         # if the edge changed used to be part of the shortest path, change the distance vector
         updated = False
 
-        # if sender is an immediate neighbor
-        if self.routing[sender][1] == sender:
-            for port in self.most_recent:
-                if port != sender:
-                    # if most recent table received says there's a shorter way to Y, loop through most recent tables received
-                    table = self.most_recent[port]
+        if sender == self.port:
+            for port in self.routing:
+                # if the receiver end of the path change is the next hop for anything in the ruoting table
+                next_hop = self.routing[port][1]
+                if next_hop == receiver:
+                    # see if another node has a faster path to the distination <port>
+                    for past in self.most_recent:
+                        if past != port and past in self.neighbors:
+                            table = self.most_recent[past]
+                            alt_dist = table[str(next_hop)][0] + self.routing[port][0]
+                            if alt_dist < cost:
+                                self.routing[port] = [alt_dist, past]
+                                updated = True
 
-                    # most recent distance of neighbor to update sender + distance to neighbor
-                    alt_dist = table[str(sender)][0] + self.routing[port][0]
-                    print(alt_dist, cost)
-                    if alt_dist < cost:
-                        self.routing[sender] = [alt_dist, port]
-                        updated = True
-                    else: 
-                        self.routing[sender] = [cost, sender]
-                        updated = True
+        # if sender is an immediate neighbor
+        elif self.routing[sender][1] == sender:
+            for port in self.routing:
+                # if the receiver end of the path change is the next hop for anything in the ruoting table
+                next_hop = self.routing[port][1]
+                if next_hop == sender:
+                    # see if another node has a faster path to the distination <port>
+                    potential_cost = self.routing[port][0] + cost
+                    for past in self.most_recent:
+                        if past != port and past in self.neighbors:
+                            table = self.most_recent[past]
+                            alt_dist = table[str(next_hop)][0] + self.routing[past][0]
+                            
+                            if updated and alt_dist < self.routing[port][0]:
+                                self.routing[port] = [alt_dist, past]
+                            elif alt_dist < potential_cost:
+                                self.routing[port] = [alt_dist, past]
+                                updated = True
 
         if updated:
             self.dv_broadcast()
