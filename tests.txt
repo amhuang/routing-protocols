@@ -1,28 +1,1351 @@
+
 python3 routenode.py dv <r/p> <update-interval> <local-port> <neighbor1-port> <cost-1> <neighbor2-port> <cost-2> .. [last][cost-change]
 
-Tests for DV with no poison reverse
-python3 routenode.py dv r [any-num] 1111 2222 1 3333 50
-python3 routenode.py dv r [any-num] 2222 1111 1 3333 2 4444 8
-python3 routenode.py dv r [any-num] 3333 1111 50 2222 2 4444 5
-python3 routenode.py dv r [any-num] 4444 2222 8 3333 5 last
+########################################
+DV Test 1 Output (from specs)
+Regular mode, no count-to-infinity
+########################################
+----------------------------------------
+Node 1111
+----------------------------------------
+[1651540730.855] Message received at Node 1111 from Node 2222
+[1651540730.855] Node 1111 Routing Table
+- (1) -> Node 2222
+- (3) -> Node 3333; Next hop -> Node 2222
+- (9) -> Node 4444; Next hop -> Node 2222
+[1651540730.855] Message sent from Node 1111 to Node 2222
+[1651540730.855] Message sent from Node 1111 to Node 3333
+[1651540730.856] Message received at Node 1111 from Node 3333
+[1651540730.856] Node 1111 Routing Table
+- (1) -> Node 2222
+- (3) -> Node 3333; Next hop -> Node 2222
+- (8) -> Node 4444; Next hop -> Node 2222
+[1651540730.856] Message sent from Node 1111 to Node 2222
+[1651540730.856] Message sent from Node 1111 to Node 3333
+[1651540730.857] Message received at Node 1111 from Node 2222
 
-Tests for DV with no poison reverse
-python3 routenode.py dv r [any-num] 1111 2222 1 3333 50
-python3 routenode.py dv r [any-num] 2222 1111 1 3333 2
-python3 routenode.py dv r [any-num] 3333 1111 50 2222 2 last 60
+----------------------------------------
+Node 2222
+----------------------------------------
+[1651540730.854] Message received at Node 2222 from Node 4444
+[1651540730.854] Node 2222 Routing Table
+- (1) -> Node 1111
+- (2) -> Node 3333
+- (8) -> Node 4444
+[1651540730.854] Message sent from Node 2222 to Node 1111
+[1651540730.854] Message sent from Node 2222 to Node 3333
+[1651540730.854] Message sent from Node 2222 to Node 4444
+[1651540730.855] Message received at Node 2222 from Node 1111
+[1651540730.856] Message received at Node 2222 from Node 3333
+[1651540730.856] Node 2222 Routing Table
+- (1) -> Node 1111
+- (2) -> Node 3333
+- (7) -> Node 4444; Next hop -> Node 3333
+[1651540730.857] Message sent from Node 2222 to Node 1111
+[1651540730.857] Message sent from Node 2222 to Node 3333
+[1651540730.857] Message sent from Node 2222 to Node 4444
+[1651540730.858] Message received at Node 2222 from Node 1111
+[1651540730.858] Message received at Node 2222 from Node 4444
+[1651540730.858] Message received at Node 2222 from Node 4444
 
-Tests for poison reverse
-python3 routenode.py dv p [any-num] 1111 2222 1 3333 50
-python3 routenode.py dv p [any-num] 2222 1111 1 3333 2
-python3 routenode.py dv p [any-num] 3333 1111 50 2222 2 last 60
+----------------------------------------
+Node 3333
+----------------------------------------
+[1651540730.855] Message received at Node 3333 from Node 2222
+[1651540730.855] Node 3333 Routing Table
+- (3) -> Node 1111; Next hop -> Node 2222
+- (2) -> Node 2222
+- (5) -> Node 4444
+[1651540730.855] Message sent from Node 3333 to Node 1111
+[1651540730.855] Message sent from Node 3333 to Node 2222
+[1651540730.855] Message sent from Node 3333 to Node 4444
+[1651540730.855] Message received at Node 3333 from Node 4444
+[1651540730.856] Message received at Node 3333 from Node 1111
+[1651540730.857] Message received at Node 3333 from Node 1111
+[1651540730.857] Message received at Node 3333 from Node 4444
+[1651540730.857] Message received at Node 3333 from Node 4444
+[1651540730.858] Message received at Node 3333 from Node 2222
 
-Test for link state algo
-python3 routenode.py ls r 10 1111 2222 1 3333 50
-python3 routenode.py ls r 10 2222 1111 1 3333 2 4444 8
-python3 routenode.py ls r 10 3333 1111 50 2222 2 4444 5
-python3 routenode.py ls r 10 4444 2222 8 3333 5 last
+----------------------------------------
+Node 4444
+----------------------------------------
+[1651540730.853] Message sent from Node 4444 to Node 2222
+[1651540730.855] Message sent from Node 4444 to Node 3333
+[1651540730.855] Node 4444 Routing Table
+- (8) -> Node 2222
+- (5) -> Node 3333
+[1651540730.856] Message received at Node 4444 from Node 2222
+[1651540730.856] Node 4444 Routing Table
+- (9) -> Node 1111; Next hop -> Node 2222
+- (8) -> Node 2222
+- (5) -> Node 3333
+[1651540730.856] Message sent from Node 4444 to Node 2222
+[1651540730.857] Message sent from Node 4444 to Node 3333
+[1651540730.857] Message received at Node 4444 from Node 3333
+[1651540730.857] Node 4444 Routing Table
+- (8) -> Node 1111; Next hop -> Node 3333
+- (7) -> Node 2222; Next hop -> Node 3333
+- (5) -> Node 3333
+[1651540730.857] Message sent from Node 4444 to Node 2222
+[1651540730.857] Message sent from Node 4444 to Node 3333
+[1651540730.858] Message received at Node 4444 from Node 2222
 
-Tests for poison reverse
-python3 routenode.py ls r 30 1111 2222 1 3333 50
-python3 routenode.py ls r 30 2222 1111 1 3333 2
-python3 routenode.py ls r 30 3333 1111 50 2222 2 last 60
+
+########################################
+DV Test 2 Output (from specs)
+Regular mode, count-to-infinity problem
+########################################
+
+----------------------------------------
+Node 1111
+----------------------------------------
+[1651540599.70] Message received at Node 1111 from Node 3333
+[1651540599.7] Node 1111 Routing Table
+- (1) -> Node 2222
+- (50) -> Node 3333
+[1651540599.7] Message sent from Node 1111 to Node 2222
+[1651540599.7] Message sent from Node 1111 to Node 3333
+[1651540599.701] Message received at Node 1111 from Node 2222
+[1651540599.701] Node 1111 Routing Table
+- (1) -> Node 2222
+- (3) -> Node 3333; Next hop -> Node 2222
+[1651540599.701] Message sent from Node 1111 to Node 2222
+[1651540599.701] Message sent from Node 1111 to Node 3333
+[1651540599.702] Message received at Node 1111 from Node 3333
+[1651540629.702] Message received at Node 1111 from Node 2222
+[1651540629.703] Node 1111 Routing Table
+- (1) -> Node 2222
+- (5) -> Node 3333; Next hop -> Node 2222
+[1651540629.703] Message sent from Node 1111 to Node 2222
+[1651540629.703] Message sent from Node 1111 to Node 3333
+[1651540629.704] Message received at Node 1111 from Node 3333
+[1651540629.704] Message received at Node 1111 from Node 2222
+[1651540629.704] Node 1111 Routing Table
+- (1) -> Node 2222
+- (7) -> Node 3333; Next hop -> Node 2222
+[1651540629.704] Message sent from Node 1111 to Node 2222
+[1651540629.704] Message sent from Node 1111 to Node 3333
+[1651540629.704] Message received at Node 1111 from Node 3333
+[1651540629.705] Message received at Node 1111 from Node 2222
+[1651540629.705] Node 1111 Routing Table
+- (1) -> Node 2222
+- (9) -> Node 3333; Next hop -> Node 2222
+[1651540629.705] Message sent from Node 1111 to Node 2222
+[1651540629.705] Message sent from Node 1111 to Node 3333
+[1651540629.705] Message received at Node 1111 from Node 2222
+[1651540629.706] Node 1111 Routing Table
+- (1) -> Node 2222
+- (11) -> Node 3333; Next hop -> Node 2222
+[1651540629.706] Message sent from Node 1111 to Node 2222
+[1651540629.706] Message sent from Node 1111 to Node 3333
+[1651540629.706] Message received at Node 1111 from Node 2222
+[1651540629.706] Node 1111 Routing Table
+- (1) -> Node 2222
+- (13) -> Node 3333; Next hop -> Node 2222
+[1651540629.706] Message sent from Node 1111 to Node 2222
+[1651540629.706] Message sent from Node 1111 to Node 3333
+[1651540629.707] Message received at Node 1111 from Node 2222
+[1651540629.707] Node 1111 Routing Table
+- (1) -> Node 2222
+- (15) -> Node 3333; Next hop -> Node 2222
+[1651540629.707] Message sent from Node 1111 to Node 2222
+[1651540629.707] Message sent from Node 1111 to Node 3333
+[1651540629.707] Message received at Node 1111 from Node 2222
+[1651540629.707] Node 1111 Routing Table
+- (1) -> Node 2222
+- (17) -> Node 3333; Next hop -> Node 2222
+[1651540629.707] Message sent from Node 1111 to Node 2222
+[1651540629.707] Message sent from Node 1111 to Node 3333
+[1651540629.708] Message received at Node 1111 from Node 2222
+[1651540629.708] Node 1111 Routing Table
+- (1) -> Node 2222
+- (19) -> Node 3333; Next hop -> Node 2222
+[1651540629.708] Message sent from Node 1111 to Node 2222
+[1651540629.708] Message sent from Node 1111 to Node 3333
+[1651540629.708] Message received at Node 1111 from Node 2222
+[1651540629.708] Node 1111 Routing Table
+- (1) -> Node 2222
+- (21) -> Node 3333; Next hop -> Node 2222
+[1651540629.708] Message sent from Node 1111 to Node 2222
+[1651540629.708] Message sent from Node 1111 to Node 3333
+[1651540629.709] Message received at Node 1111 from Node 2222
+[1651540629.709] Node 1111 Routing Table
+- (1) -> Node 2222
+- (23) -> Node 3333; Next hop -> Node 2222
+[1651540629.709] Message sent from Node 1111 to Node 2222
+[1651540629.709] Message sent from Node 1111 to Node 3333
+[1651540629.710] Message received at Node 1111 from Node 2222
+[1651540629.71] Node 1111 Routing Table
+- (1) -> Node 2222
+- (25) -> Node 3333; Next hop -> Node 2222
+[1651540629.71] Message sent from Node 1111 to Node 2222
+[1651540629.71] Message sent from Node 1111 to Node 3333
+[1651540629.711] Message received at Node 1111 from Node 2222
+[1651540629.711] Node 1111 Routing Table
+- (1) -> Node 2222
+- (27) -> Node 3333; Next hop -> Node 2222
+[1651540629.711] Message sent from Node 1111 to Node 2222
+[1651540629.711] Message sent from Node 1111 to Node 3333
+[1651540629.711] Message received at Node 1111 from Node 2222
+[1651540629.711] Node 1111 Routing Table
+- (1) -> Node 2222
+- (29) -> Node 3333; Next hop -> Node 2222
+[1651540629.712] Message sent from Node 1111 to Node 2222
+[1651540629.712] Message sent from Node 1111 to Node 3333
+[1651540629.712] Message received at Node 1111 from Node 2222
+[1651540629.712] Node 1111 Routing Table
+- (1) -> Node 2222
+- (31) -> Node 3333; Next hop -> Node 2222
+[1651540629.712] Message sent from Node 1111 to Node 2222
+[1651540629.712] Message sent from Node 1111 to Node 3333
+[1651540629.713] Message received at Node 1111 from Node 2222
+[1651540629.713] Node 1111 Routing Table
+- (1) -> Node 2222
+- (33) -> Node 3333; Next hop -> Node 2222
+[1651540629.713] Message sent from Node 1111 to Node 2222
+[1651540629.713] Message sent from Node 1111 to Node 3333
+[1651540629.713] Message received at Node 1111 from Node 2222
+[1651540629.713] Node 1111 Routing Table
+- (1) -> Node 2222
+- (35) -> Node 3333; Next hop -> Node 2222
+[1651540629.713] Message sent from Node 1111 to Node 2222
+[1651540629.713] Message sent from Node 1111 to Node 3333
+[1651540629.714] Message received at Node 1111 from Node 2222
+[1651540629.714] Node 1111 Routing Table
+- (1) -> Node 2222
+- (37) -> Node 3333; Next hop -> Node 2222
+[1651540629.714] Message sent from Node 1111 to Node 2222
+[1651540629.714] Message sent from Node 1111 to Node 3333
+[1651540629.714] Message received at Node 1111 from Node 2222
+[1651540629.714] Node 1111 Routing Table
+- (1) -> Node 2222
+- (39) -> Node 3333; Next hop -> Node 2222
+[1651540629.714] Message sent from Node 1111 to Node 2222
+[1651540629.714] Message sent from Node 1111 to Node 3333
+[1651540629.715] Message received at Node 1111 from Node 2222
+[1651540629.715] Node 1111 Routing Table
+- (1) -> Node 2222
+- (41) -> Node 3333; Next hop -> Node 2222
+[1651540629.715] Message sent from Node 1111 to Node 2222
+[1651540629.715] Message sent from Node 1111 to Node 3333
+[1651540629.716] Message received at Node 1111 from Node 2222
+[1651540629.716] Node 1111 Routing Table
+- (1) -> Node 2222
+- (43) -> Node 3333; Next hop -> Node 2222
+[1651540629.716] Message sent from Node 1111 to Node 2222
+[1651540629.716] Message sent from Node 1111 to Node 3333
+[1651540629.716] Message received at Node 1111 from Node 2222
+[1651540629.716] Node 1111 Routing Table
+- (1) -> Node 2222
+- (45) -> Node 3333; Next hop -> Node 2222
+[1651540629.716] Message sent from Node 1111 to Node 2222
+[1651540629.716] Message sent from Node 1111 to Node 3333
+[1651540629.717] Message received at Node 1111 from Node 2222
+[1651540629.717] Node 1111 Routing Table
+- (1) -> Node 2222
+- (47) -> Node 3333; Next hop -> Node 2222
+[1651540629.717] Message sent from Node 1111 to Node 2222
+[1651540629.717] Message sent from Node 1111 to Node 3333
+[1651540629.717] Message received at Node 1111 from Node 2222
+[1651540629.717] Node 1111 Routing Table
+- (1) -> Node 2222
+- (49) -> Node 3333; Next hop -> Node 2222
+[1651540629.718] Message sent from Node 1111 to Node 2222
+[1651540629.718] Message sent from Node 1111 to Node 3333
+[1651540629.718] Message received at Node 1111 from Node 2222
+[1651540629.718] Node 1111 Routing Table
+- (1) -> Node 2222
+- (50) -> Node 3333
+[1651540629.718] Message sent from Node 1111 to Node 2222
+[1651540629.718] Message sent from Node 1111 to Node 3333
+[1651540629.718] Message received at Node 1111 from Node 2222
+
+----------------------------------------
+Node 2222
+----------------------------------------
+[1651540599.70] Message received at Node 2222 from Node 1111
+[1651540599.7] Node 2222 Routing Table
+- (1) -> Node 1111
+- (2) -> Node 3333
+[1651540599.7] Message sent from Node 2222 to Node 1111
+[1651540599.701] Message sent from Node 2222 to Node 3333
+[1651540599.701] Message received at Node 2222 from Node 3333
+[1651540599.701] Message received at Node 2222 from Node 1111
+[1651540599.702] Message received at Node 2222 from Node 3333
+[1651540629.702] Node 3333 cost updated to 60
+[1651540629.702] Link value message received at Node 2222 from Node 3333
+[1651540629.702] Message sent from Node 2222 to Node 1111
+[1651540629.702] Message sent from Node 2222 to Node 3333
+[1651540629.703] Node 2222 Routing Table
+- (1) -> Node 1111
+- (4) -> Node 3333; Next hop -> Node 1111
+[1651540629.704] Message received at Node 2222 from Node 1111
+[1651540629.704] Node 2222 Routing Table
+- (1) -> Node 1111
+- (6) -> Node 3333; Next hop -> Node 1111
+[1651540629.704] Message sent from Node 2222 to Node 1111
+[1651540629.704] Message sent from Node 2222 to Node 3333
+[1651540629.704] Message received at Node 2222 from Node 3333
+[1651540629.704] Message received at Node 2222 from Node 1111
+[1651540629.704] Node 2222 Routing Table
+- (1) -> Node 1111
+- (8) -> Node 3333; Next hop -> Node 1111
+[1651540629.705] Message sent from Node 2222 to Node 1111
+[1651540629.705] Message sent from Node 2222 to Node 3333
+[1651540629.705] Message received at Node 2222 from Node 3333
+[1651540629.705] Message received at Node 2222 from Node 1111
+[1651540629.705] Node 2222 Routing Table
+- (1) -> Node 1111
+- (10) -> Node 3333; Next hop -> Node 1111
+[1651540629.705] Message sent from Node 2222 to Node 1111
+[1651540629.705] Message sent from Node 2222 to Node 3333
+[1651540629.706] Message received at Node 2222 from Node 1111
+[1651540629.706] Node 2222 Routing Table
+- (1) -> Node 1111
+- (12) -> Node 3333; Next hop -> Node 1111
+[1651540629.706] Message sent from Node 2222 to Node 1111
+[1651540629.706] Message sent from Node 2222 to Node 3333
+[1651540629.706] Message received at Node 2222 from Node 1111
+[1651540629.706] Node 2222 Routing Table
+- (1) -> Node 1111
+- (14) -> Node 3333; Next hop -> Node 1111
+[1651540629.706] Message sent from Node 2222 to Node 1111
+[1651540629.706] Message sent from Node 2222 to Node 3333
+[1651540629.707] Message received at Node 2222 from Node 1111
+[1651540629.707] Node 2222 Routing Table
+- (1) -> Node 1111
+- (16) -> Node 3333; Next hop -> Node 1111
+[1651540629.707] Message sent from Node 2222 to Node 1111
+[1651540629.707] Message sent from Node 2222 to Node 3333
+[1651540629.707] Message received at Node 2222 from Node 1111
+[1651540629.707] Node 2222 Routing Table
+- (1) -> Node 1111
+- (18) -> Node 3333; Next hop -> Node 1111
+[1651540629.708] Message sent from Node 2222 to Node 1111
+[1651540629.708] Message sent from Node 2222 to Node 3333
+[1651540629.708] Message received at Node 2222 from Node 1111
+[1651540629.708] Node 2222 Routing Table
+- (1) -> Node 1111
+- (20) -> Node 3333; Next hop -> Node 1111
+[1651540629.708] Message sent from Node 2222 to Node 1111
+[1651540629.708] Message sent from Node 2222 to Node 3333
+[1651540629.709] Message received at Node 2222 from Node 1111
+[1651540629.709] Node 2222 Routing Table
+- (1) -> Node 1111
+- (22) -> Node 3333; Next hop -> Node 1111
+[1651540629.709] Message sent from Node 2222 to Node 1111
+[1651540629.709] Message sent from Node 2222 to Node 3333
+[1651540629.709] Message received at Node 2222 from Node 1111
+[1651540629.709] Node 2222 Routing Table
+- (1) -> Node 1111
+- (24) -> Node 3333; Next hop -> Node 1111
+[1651540629.71] Message sent from Node 2222 to Node 1111
+[1651540629.71] Message sent from Node 2222 to Node 3333
+[1651540629.710] Message received at Node 2222 from Node 1111
+[1651540629.71] Node 2222 Routing Table
+- (1) -> Node 1111
+- (26) -> Node 3333; Next hop -> Node 1111
+[1651540629.71] Message sent from Node 2222 to Node 1111
+[1651540629.711] Message sent from Node 2222 to Node 3333
+[1651540629.711] Message received at Node 2222 from Node 1111
+[1651540629.711] Node 2222 Routing Table
+- (1) -> Node 1111
+- (28) -> Node 3333; Next hop -> Node 1111
+[1651540629.711] Message sent from Node 2222 to Node 1111
+[1651540629.711] Message sent from Node 2222 to Node 3333
+[1651540629.712] Message received at Node 2222 from Node 1111
+[1651540629.712] Node 2222 Routing Table
+- (1) -> Node 1111
+- (30) -> Node 3333; Next hop -> Node 1111
+[1651540629.712] Message sent from Node 2222 to Node 1111
+[1651540629.712] Message sent from Node 2222 to Node 3333
+[1651540629.712] Message received at Node 2222 from Node 1111
+[1651540629.712] Node 2222 Routing Table
+- (1) -> Node 1111
+- (32) -> Node 3333; Next hop -> Node 1111
+[1651540629.712] Message sent from Node 2222 to Node 1111
+[1651540629.712] Message sent from Node 2222 to Node 3333
+[1651540629.713] Message received at Node 2222 from Node 1111
+[1651540629.713] Node 2222 Routing Table
+- (1) -> Node 1111
+- (34) -> Node 3333; Next hop -> Node 1111
+[1651540629.713] Message sent from Node 2222 to Node 1111
+[1651540629.713] Message sent from Node 2222 to Node 3333
+[1651540629.713] Message received at Node 2222 from Node 1111
+[1651540629.713] Node 2222 Routing Table
+- (1) -> Node 1111
+- (36) -> Node 3333; Next hop -> Node 1111
+[1651540629.714] Message sent from Node 2222 to Node 1111
+[1651540629.714] Message sent from Node 2222 to Node 3333
+[1651540629.714] Message received at Node 2222 from Node 1111
+[1651540629.714] Node 2222 Routing Table
+- (1) -> Node 1111
+- (38) -> Node 3333; Next hop -> Node 1111
+[1651540629.714] Message sent from Node 2222 to Node 1111
+[1651540629.714] Message sent from Node 2222 to Node 3333
+[1651540629.715] Message received at Node 2222 from Node 1111
+[1651540629.715] Node 2222 Routing Table
+- (1) -> Node 1111
+- (40) -> Node 3333; Next hop -> Node 1111
+[1651540629.715] Message sent from Node 2222 to Node 1111
+[1651540629.715] Message sent from Node 2222 to Node 3333
+[1651540629.715] Message received at Node 2222 from Node 1111
+[1651540629.715] Node 2222 Routing Table
+- (1) -> Node 1111
+- (42) -> Node 3333; Next hop -> Node 1111
+[1651540629.715] Message sent from Node 2222 to Node 1111
+[1651540629.715] Message sent from Node 2222 to Node 3333
+[1651540629.716] Message received at Node 2222 from Node 1111
+[1651540629.716] Node 2222 Routing Table
+- (1) -> Node 1111
+- (44) -> Node 3333; Next hop -> Node 1111
+[1651540629.716] Message sent from Node 2222 to Node 1111
+[1651540629.716] Message sent from Node 2222 to Node 3333
+[1651540629.717] Message received at Node 2222 from Node 1111
+[1651540629.717] Node 2222 Routing Table
+- (1) -> Node 1111
+- (46) -> Node 3333; Next hop -> Node 1111
+[1651540629.717] Message sent from Node 2222 to Node 1111
+[1651540629.717] Message sent from Node 2222 to Node 3333
+[1651540629.717] Message received at Node 2222 from Node 1111
+[1651540629.717] Node 2222 Routing Table
+- (1) -> Node 1111
+- (48) -> Node 3333; Next hop -> Node 1111
+[1651540629.717] Message sent from Node 2222 to Node 1111
+[1651540629.717] Message sent from Node 2222 to Node 3333
+[1651540629.718] Message received at Node 2222 from Node 1111
+[1651540629.718] Node 2222 Routing Table
+- (1) -> Node 1111
+- (50) -> Node 3333; Next hop -> Node 1111
+[1651540629.718] Message sent from Node 2222 to Node 1111
+[1651540629.718] Message sent from Node 2222 to Node 3333
+[1651540629.718] Message received at Node 2222 from Node 1111
+[1651540629.718] Node 2222 Routing Table
+- (1) -> Node 1111
+- (51) -> Node 3333; Next hop -> Node 1111
+[1651540629.718] Message sent from Node 2222 to Node 1111
+[1651540629.718] Message sent from Node 2222 to Node 3333
+
+
+----------------------------------------
+Node 3333
+----------------------------------------
+[1651540599.699] Message sent from Node 3333 to Node 1111
+[1651540599.7] Message sent from Node 3333 to Node 2222
+[1651540599.701] Node 3333 Routing Table
+- (50) -> Node 1111
+- (2) -> Node 2222
+[1651540599.702] Message received at Node 3333 from Node 1111
+[1651540599.702] Message received at Node 3333 from Node 2222
+[1651540599.702] Node 3333 Routing Table
+- (3) -> Node 1111; Next hop -> Node 2222
+- (2) -> Node 2222
+[1651540599.702] Message sent from Node 3333 to Node 1111
+[1651540599.702] Message sent from Node 3333 to Node 2222
+[1651540599.702] Message received at Node 3333 from Node 1111
+[1651540629.702] Node 2222 cost updated to 60
+[1651540629.702] Link value message sent from Node 3333 to Node 2222
+[1651540629.703] Message received at Node 3333 from Node 2222
+[1651540629.703] Node 3333 Routing Table
+- (50) -> Node 1111
+- (60) -> Node 2222
+[1651540629.703] Message sent from Node 3333 to Node 1111
+[1651540629.704] Message sent from Node 3333 to Node 2222
+[1651540629.704] Message received at Node 3333 from Node 1111
+[1651540629.704] Node 3333 Routing Table
+- (50) -> Node 1111
+- (51) -> Node 2222; Next hop -> Node 1111
+[1651540629.704] Message sent from Node 3333 to Node 1111
+[1651540629.704] Message sent from Node 3333 to Node 2222
+[1651540629.705] Message received at Node 3333 from Node 2222
+[1651540629.705] Message received at Node 3333 from Node 1111
+[1651540629.705] Message received at Node 3333 from Node 2222
+[1651540629.705] Message received at Node 3333 from Node 1111
+[1651540629.705] Message received at Node 3333 from Node 2222
+[1651540629.706] Message received at Node 3333 from Node 1111
+[1651540629.706] Message received at Node 3333 from Node 2222
+[1651540629.706] Message received at Node 3333 from Node 1111
+[1651540629.707] Message received at Node 3333 from Node 1111
+[1651540629.707] Message received at Node 3333 from Node 2222
+[1651540629.707] Message received at Node 3333 from Node 2222
+[1651540629.707] Message received at Node 3333 from Node 1111
+[1651540629.708] Message received at Node 3333 from Node 2222
+[1651540629.708] Message received at Node 3333 from Node 1111
+[1651540629.708] Message received at Node 3333 from Node 2222
+[1651540629.709] Message received at Node 3333 from Node 1111
+[1651540629.709] Message received at Node 3333 from Node 2222
+[1651540629.709] Message received at Node 3333 from Node 1111
+[1651540629.710] Message received at Node 3333 from Node 2222
+[1651540629.710] Message received at Node 3333 from Node 1111
+[1651540629.711] Message received at Node 3333 from Node 2222
+[1651540629.711] Message received at Node 3333 from Node 1111
+[1651540629.711] Message received at Node 3333 from Node 2222
+[1651540629.712] Message received at Node 3333 from Node 1111
+[1651540629.712] Message received at Node 3333 from Node 2222
+[1651540629.712] Message received at Node 3333 from Node 1111
+[1651540629.713] Message received at Node 3333 from Node 2222
+[1651540629.713] Message received at Node 3333 from Node 1111
+[1651540629.713] Message received at Node 3333 from Node 2222
+[1651540629.713] Message received at Node 3333 from Node 1111
+[1651540629.714] Message received at Node 3333 from Node 2222
+[1651540629.714] Message received at Node 3333 from Node 1111
+[1651540629.714] Message received at Node 3333 from Node 2222
+[1651540629.714] Message received at Node 3333 from Node 1111
+[1651540629.715] Message received at Node 3333 from Node 2222
+[1651540629.715] Message received at Node 3333 from Node 1111
+[1651540629.715] Message received at Node 3333 from Node 2222
+[1651540629.716] Message received at Node 3333 from Node 1111
+[1651540629.716] Message received at Node 3333 from Node 2222
+[1651540629.717] Message received at Node 3333 from Node 1111
+[1651540629.717] Message received at Node 3333 from Node 2222
+[1651540629.717] Message received at Node 3333 from Node 1111
+[1651540629.717] Message received at Node 3333 from Node 2222
+[1651540629.718] Message received at Node 3333 from Node 1111
+[1651540629.718] Message received at Node 3333 from Node 2222
+[1651540629.718] Message received at Node 3333 from Node 1111
+[1651540629.718] Message received at Node 3333 from Node 2222
+
+########################################
+DV Test 3 Output (from specs)
+Same as test 2 but with poisoned reverse
+########################################
+----------------------------------------
+Node 1111
+----------------------------------------
+[1651540816.748] Message received at Node 1111 from Node 3333
+[1651540816.748] Node 1111 Routing Table
+- (1) -> Node 2222
+- (50) -> Node 3333
+[1651540816.748] Message sent from Node 1111 to Node 2222
+[1651540816.748] Message sent from Node 1111 to Node 3333
+[1651540816.750] Message received at Node 1111 from Node 2222
+[1651540816.75] Node 1111 Routing Table
+- (1) -> Node 2222
+- (3) -> Node 3333; Next hop -> Node 2222
+[1651540816.75] Message sent from Node 1111 to Node 2222
+[1651540816.75] Message sent from Node 1111 to Node 3333
+[1651540816.751] Message received at Node 1111 from Node 3333
+[1651540846.750] Message received at Node 1111 from Node 2222
+[1651540846.75] Node 1111 Routing Table
+- (1) -> Node 2222
+- (50) -> Node 3333
+[1651540846.75] Message sent from Node 1111 to Node 2222
+[1651540846.75] Message sent from Node 1111 to Node 3333
+[1651540846.751] Message received at Node 1111 from Node 3333
+[1651540846.751] Message received at Node 1111 from Node 3333
+[1651540846.751] Message received at Node 1111 from Node 2222
+
+----------------------------------------
+Node 2222
+----------------------------------------
+[1651540816.748] Message received at Node 2222 from Node 1111
+[1651540816.748] Node 2222 Routing Table
+- (1) -> Node 1111
+- (2) -> Node 3333
+[1651540816.749] Message sent from Node 2222 to Node 1111
+[1651540816.75] Message sent from Node 2222 to Node 3333
+[1651540816.750] Message received at Node 2222 from Node 3333
+[1651540816.750] Message received at Node 2222 from Node 1111
+[1651540816.751] Message received at Node 2222 from Node 3333
+[1651540846.75] Node 3333 cost updated to 60
+[1651540846.75] Link value message received at Node 2222 from Node 3333
+[1651540846.75] Message sent from Node 2222 to Node 1111
+[1651540846.75] Message sent from Node 2222 to Node 3333
+[1651540846.75] Node 2222 Routing Table
+- (1) -> Node 1111
+- (60) -> Node 3333
+[1651540846.751] Message received at Node 2222 from Node 1111
+[1651540846.751] Node 2222 Routing Table
+- (1) -> Node 1111
+- (51) -> Node 3333; Next hop -> Node 1111
+[1651540846.751] Message sent from Node 2222 to Node 1111
+[1651540846.751] Message sent from Node 2222 to Node 3333
+[1651540846.751] Message received at Node 2222 from Node 3333
+[1651540846.752] Message received at Node 2222 from Node 3333
+
+----------------------------------------
+Node 3333
+----------------------------------------
+[1651540816.747] Message sent from Node 3333 to Node 1111
+[1651540816.748] Message sent from Node 3333 to Node 2222
+[1651540816.748] Node 3333 Routing Table
+- (50) -> Node 1111
+- (2) -> Node 2222
+[1651540816.749] Message received at Node 3333 from Node 1111
+[1651540816.750] Message received at Node 3333 from Node 1111
+[1651540816.750] Message received at Node 3333 from Node 2222
+[1651540816.75] Node 3333 Routing Table
+- (3) -> Node 1111; Next hop -> Node 2222
+- (2) -> Node 2222
+[1651540816.75] Message sent from Node 3333 to Node 1111
+[1651540816.751] Message sent from Node 3333 to Node 2222
+[1651540846.749] Node 2222 cost updated to 60
+[1651540846.75] Link value message sent from Node 3333 to Node 2222
+[1651540846.750] Message received at Node 3333 from Node 2222
+[1651540846.75] Node 3333 Routing Table
+- (50) -> Node 1111
+- (60) -> Node 2222
+[1651540846.751] Message sent from Node 3333 to Node 1111
+[1651540846.751] Message sent from Node 3333 to Node 2222
+[1651540846.751] Message received at Node 3333 from Node 1111
+[1651540846.751] Node 3333 Routing Table
+- (50) -> Node 1111
+- (51) -> Node 2222; Next hop -> Node 1111
+[1651540846.751] Message sent from Node 3333 to Node 1111
+[1651540846.751] Message sent from Node 3333 to Node 2222
+[1651540846.751] Message received at Node 3333 from Node 2222
+
+########################################
+DV Test 4 Output
+Regular mode, count-to-infinity problem
+########################################
+----------------------------------------
+Node 1111
+----------------------------------------
+[1651542030.947] Message received at Node 1111 from Node 3333
+[1651542030.947] Node 1111 Routing Table
+- (2) -> Node 2222
+- (20) -> Node 3333
+[1651542030.948] Message sent from Node 1111 to Node 2222
+[1651542030.948] Message sent from Node 1111 to Node 3333
+[1651542030.948] Message received at Node 1111 from Node 2222
+[1651542030.948] Node 1111 Routing Table
+- (2) -> Node 2222
+- (4) -> Node 3333; Next hop -> Node 2222
+[1651542030.949] Message sent from Node 1111 to Node 2222
+[1651542030.949] Message sent from Node 1111 to Node 3333
+[1651542030.950] Message received at Node 1111 from Node 3333
+[1651542060.950] Message received at Node 1111 from Node 2222
+[1651542060.950] Node 1111 Routing Table
+- (2) -> Node 2222
+- (8) -> Node 3333; Next hop -> Node 2222
+[1651542060.950] Message sent from Node 1111 to Node 2222
+[1651542060.951] Message sent from Node 1111 to Node 3333
+[1651542060.951] Message received at Node 1111 from Node 3333
+[1651542060.951] Message received at Node 1111 from Node 2222
+[1651542060.951] Node 1111 Routing Table
+- (2) -> Node 2222
+- (12) -> Node 3333; Next hop -> Node 2222
+[1651542060.951] Message sent from Node 1111 to Node 2222
+[1651542060.951] Message sent from Node 1111 to Node 3333
+[1651542060.951] Message received at Node 1111 from Node 3333
+[1651542060.952] Message received at Node 1111 from Node 2222
+[1651542060.952] Node 1111 Routing Table
+- (2) -> Node 2222
+- (16) -> Node 3333; Next hop -> Node 2222
+[1651542060.952] Message sent from Node 1111 to Node 2222
+[1651542060.952] Message sent from Node 1111 to Node 3333
+[1651542060.953] Message received at Node 1111 from Node 2222
+[1651542060.953] Node 1111 Routing Table
+- (2) -> Node 2222
+- (20) -> Node 3333
+[1651542060.953] Message sent from Node 1111 to Node 2222
+[1651542060.953] Message sent from Node 1111 to Node 3333
+[1651542060.953] Message received at Node 1111 from Node 2222
+
+----------------------------------------
+Node 2222
+----------------------------------------
+[1651542030.947] Message received at Node 2222 from Node 3333
+[1651542030.948] Node 2222 Routing Table
+- (2) -> Node 1111
+- (2) -> Node 3333
+[1651542030.948] Message sent from Node 2222 to Node 1111
+[1651542030.948] Message sent from Node 2222 to Node 3333
+[1651542030.949] Message received at Node 2222 from Node 1111
+[1651542030.949] Message received at Node 2222 from Node 1111
+[1651542030.950] Message received at Node 2222 from Node 3333
+[1651542060.949] Node 3333 cost updated to 25
+[1651542060.949] Link value message received at Node 2222 from Node 3333
+[1651542060.949] Message sent from Node 2222 to Node 1111
+[1651542060.949] Message sent from Node 2222 to Node 3333
+[1651542060.950] Node 2222 Routing Table
+- (2) -> Node 1111
+- (6) -> Node 3333; Next hop -> Node 1111
+[1651542060.950] Message received at Node 2222 from Node 3333
+[1651542060.951] Message received at Node 2222 from Node 1111
+[1651542060.951] Node 2222 Routing Table
+- (2) -> Node 1111
+- (10) -> Node 3333; Next hop -> Node 1111
+[1651542060.951] Message sent from Node 2222 to Node 1111
+[1651542060.951] Message sent from Node 2222 to Node 3333
+[1651542060.951] Message received at Node 2222 from Node 1111
+[1651542060.951] Node 2222 Routing Table
+- (2) -> Node 1111
+- (14) -> Node 3333; Next hop -> Node 1111
+[1651542060.952] Message sent from Node 2222 to Node 1111
+[1651542060.952] Message sent from Node 2222 to Node 3333
+[1651542060.952] Message received at Node 2222 from Node 3333
+[1651542060.952] Message received at Node 2222 from Node 1111
+[1651542060.953] Node 2222 Routing Table
+- (2) -> Node 1111
+- (18) -> Node 3333; Next hop -> Node 1111
+[1651542060.953] Message sent from Node 2222 to Node 1111
+[1651542060.953] Message sent from Node 2222 to Node 3333
+[1651542060.953] Message received at Node 2222 from Node 1111
+[1651542060.953] Node 2222 Routing Table
+- (2) -> Node 1111
+- (22) -> Node 3333; Next hop -> Node 1111
+[1651542060.953] Message sent from Node 2222 to Node 1111
+[1651542060.954] Message sent from Node 2222 to Node 3333
+
+----------------------------------------
+Node 3333
+----------------------------------------
+[1651542030.947] Message sent from Node 3333 to Node 1111
+[1651542030.947] Message sent from Node 3333 to Node 2222
+[1651542030.948] Node 3333 Routing Table
+- (20) -> Node 1111
+- (2) -> Node 2222
+[1651542030.949] Message received at Node 3333 from Node 1111
+[1651542030.949] Message received at Node 3333 from Node 1111
+[1651542030.949] Message received at Node 3333 from Node 2222
+[1651542030.949] Node 3333 Routing Table
+- (4) -> Node 1111; Next hop -> Node 2222
+- (2) -> Node 2222
+[1651542030.949] Message sent from Node 3333 to Node 1111
+[1651542030.949] Message sent from Node 3333 to Node 2222
+[1651542060.949] Node 2222 cost updated to 25
+[1651542060.949] Link value message sent from Node 3333 to Node 2222
+[1651542060.950] Message received at Node 3333 from Node 2222
+[1651542060.950] Node 3333 Routing Table
+- (20) -> Node 1111
+- (25) -> Node 2222
+[1651542060.950] Message sent from Node 3333 to Node 1111
+[1651542060.950] Message sent from Node 3333 to Node 2222
+[1651542060.951] Message received at Node 3333 from Node 1111
+[1651542060.951] Node 3333 Routing Table
+- (20) -> Node 1111
+- (22) -> Node 2222; Next hop -> Node 1111
+[1651542060.951] Message sent from Node 3333 to Node 1111
+[1651542060.951] Message sent from Node 3333 to Node 2222
+[1651542060.951] Message received at Node 3333 from Node 1111
+[1651542060.951] Message received at Node 3333 from Node 2222
+[1651542060.952] Message received at Node 3333 from Node 1111
+[1651542060.952] Message received at Node 3333 from Node 2222
+[1651542060.953] Message received at Node 3333 from Node 1111
+[1651542060.953] Message received at Node 3333 from Node 2222
+[1651542060.954] Message received at Node 3333 from Node 2222
+
+########################################
+DV Test 5 Output
+Test 4 but with poisoned Reverse
+########################################
+----------------------------------------
+Node 1111
+----------------------------------------
+[1651542360.309] Message received at Node 1111 from Node 3333
+[1651542360.309] Node 1111 Routing Table
+- (2) -> Node 2222
+- (20) -> Node 3333
+[1651542360.309] Message sent from Node 1111 to Node 2222
+[1651542360.310] Message sent from Node 1111 to Node 3333
+[1651542360.311] Message received at Node 1111 from Node 2222
+[1651542360.311] Node 1111 Routing Table
+- (2) -> Node 2222
+- (4) -> Node 3333; Next hop -> Node 2222
+[1651542360.311] Message sent from Node 1111 to Node 2222
+[1651542360.311] Message sent from Node 1111 to Node 3333
+[1651542360.311] Message received at Node 1111 from Node 3333
+[1651542390.312] Message received at Node 1111 from Node 2222
+[1651542390.312] Node 1111 Routing Table
+- (2) -> Node 2222
+- (20) -> Node 3333
+[1651542390.312] Message sent from Node 1111 to Node 2222
+[1651542390.312] Message sent from Node 1111 to Node 3333
+[1651542390.312] Message received at Node 1111 from Node 3333
+[1651542390.313] Message received at Node 1111 from Node 3333
+[1651542390.313] Message received at Node 1111 from Node 2222
+
+----------------------------------------
+Node 2222
+----------------------------------------
+[1651542360.310] Message received at Node 2222 from Node 1111
+[1651542360.310] Node 2222 Routing Table
+- (2) -> Node 1111
+- (2) -> Node 3333
+[1651542360.310] Message sent from Node 2222 to Node 1111
+[1651542360.310] Message sent from Node 2222 to Node 3333
+[1651542360.311] Message received at Node 2222 from Node 3333
+[1651542360.311] Message received at Node 2222 from Node 3333
+[1651542360.311] Message received at Node 2222 from Node 1111
+[1651542390.311] Node 3333 cost updated to 25
+[1651542390.311] Link value message received at Node 2222 from Node 3333
+[1651542390.311] Message sent from Node 2222 to Node 1111
+[1651542390.311] Message sent from Node 2222 to Node 3333
+[1651542390.312] Node 2222 Routing Table
+- (2) -> Node 1111
+- (25) -> Node 3333
+[1651542390.313] Message received at Node 2222 from Node 1111
+[1651542390.313] Node 2222 Routing Table
+- (2) -> Node 1111
+- (22) -> Node 3333; Next hop -> Node 1111
+[1651542390.313] Message sent from Node 2222 to Node 1111
+[1651542390.313] Message sent from Node 2222 to Node 3333
+[1651542390.313] Message received at Node 2222 from Node 3333
+[1651542390.313] Message received at Node 2222 from Node 3333
+
+----------------------------------------
+Node 3333
+----------------------------------------
+[1651542360.309] Message sent from Node 3333 to Node 1111
+[1651542360.310] Message sent from Node 3333 to Node 2222
+[1651542360.310] Node 3333 Routing Table
+- (20) -> Node 1111
+- (2) -> Node 2222
+[1651542360.310] Message received at Node 3333 from Node 1111
+[1651542360.311] Message received at Node 3333 from Node 2222
+[1651542360.311] Node 3333 Routing Table
+- (4) -> Node 1111; Next hop -> Node 2222
+- (2) -> Node 2222
+[1651542360.311] Message sent from Node 3333 to Node 1111
+[1651542360.311] Message sent from Node 3333 to Node 2222
+[1651542360.311] Message received at Node 3333 from Node 1111
+[1651542390.310] Node 2222 cost updated to 25
+[1651542390.311] Link value message sent from Node 3333 to Node 2222
+[1651542390.312] Message received at Node 3333 from Node 2222
+[1651542390.312] Node 3333 Routing Table
+- (20) -> Node 1111
+- (25) -> Node 2222
+[1651542390.312] Message sent from Node 3333 to Node 1111
+[1651542390.312] Message sent from Node 3333 to Node 2222
+[1651542390.312] Message received at Node 3333 from Node 1111
+[1651542390.312] Node 3333 Routing Table
+- (20) -> Node 1111
+- (22) -> Node 2222; Next hop -> Node 1111
+[1651542390.313] Message sent from Node 3333 to Node 1111
+[1651542390.313] Message sent from Node 3333 to Node 2222
+[1651542390.313] Message received at Node 3333 from Node 2222
+
+
+
+########################################
+LS Test 1 Output
+Regular LS algorithm
+########################################
+----------------------------------------
+Node 1111
+----------------------------------------
+[1651544770.267] LSA of Node 4444 with sequence number 1651544770.26575 received from Node 2222
+[1651544770.267] Node 1111 Network Topology
+- (8) from Node 2222 to Node 4444
+- (5) from Node 3333 to Node 4444
+[1651544770.267] LSA of Node 1111 with sequence number 1651544754.918513 sent to Node 2222
+[1651544770.267] LSA of Node 1111 with sequence number 1651544754.918513 sent to Node 3333
+[1651544770.267] LSA of Node 1111 with sequence number 1651544754.918513 sent to Node 2222
+[1651544770.267] LSA of Node 1111 with sequence number 1651544754.918513 sent to Node 3333
+[1651544770.271] LSA of Node 2222 with sequence number 1651544759.403004 received from Node 2222
+[1651544770.271] Node 1111 Network Topology
+- (1) from Node 1111 to Node 2222
+- (2) from Node 2222 to Node 3333
+- (8) from Node 2222 to Node 4444
+- (5) from Node 3333 to Node 4444
+[1651544770.271] LSA of Node 1111 with sequence number 1651544754.918513 sent to Node 2222
+[1651544770.271] LSA of Node 1111 with sequence number 1651544754.918513 sent to Node 3333
+[1651544770.271] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 4444
+- Sequence number 1651544770.26575
+- Received from 3333
+[1651544770.271] LSA of Node 3333 with sequence number 1651544763.975785 received from Node 3333
+[1651544770.271] Node 1111 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+- (2) from Node 2222 to Node 3333
+- (8) from Node 2222 to Node 4444
+- (5) from Node 3333 to Node 4444
+[1651544770.272] LSA of Node 1111 with sequence number 1651544754.918513 sent to Node 2222
+[1651544770.272] LSA of Node 1111 with sequence number 1651544754.918513 sent to Node 3333
+[1651544770.272] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544759.403004
+- Received from 3333
+[1651544770.272] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544754.918513
+- Received from 2222
+[1651544770.272] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544754.918513
+- Received from 3333
+[1651544770.272] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544763.975785
+- Received from 2222
+[1651544800.268] Node 1111 Routing Table
+- (1) -> Node 2222
+- (3) -> Node 3333; Next hop -> Node 2222
+- (8) -> Node 4444; Next hop -> Node 2222
+[1651544800.420] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544763.975785
+- Received from 3333
+[1651544800.648] LSA of Node 1111 with sequence number 1651544754.918513 sent to Node 2222
+[1651544800.648] LSA of Node 1111 with sequence number 1651544754.918513 sent to Node 3333
+[1651544800.768] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544759.403004
+- Received from 2222
+
+----------------------------------------
+Node 2222
+----------------------------------------
+[1651544770.266] LSA of Node 4444 with sequence number 1651544770.26575 received from Node 4444
+[1651544770.266] Node 2222 Network Topology
+- (8) from Node 2222 to Node 4444
+- (5) from Node 3333 to Node 4444
+[1651544770.266] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 1111
+[1651544770.266] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 3333
+[1651544770.266] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 4444
+[1651544770.266] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 1111
+[1651544770.266] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 3333
+[1651544770.267] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 4444
+[1651544770.268] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 4444
+- Sequence number 1651544770.26575
+- Received from 1111
+[1651544770.269] LSA of Node 1111 with sequence number 1651544754.918513 received from Node 1111
+[1651544770.269] Node 2222 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+- (8) from Node 2222 to Node 4444
+- (5) from Node 3333 to Node 4444
+[1651544770.269] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 1111
+[1651544770.269] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 3333
+[1651544770.269] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 4444
+[1651544770.269] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 4444
+- Sequence number 1651544770.26575
+- Received from 3333
+[1651544770.270] LSA of Node 3333 with sequence number 1651544763.975785 received from Node 3333
+[1651544770.270] Node 2222 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+- (2) from Node 2222 to Node 3333
+- (8) from Node 2222 to Node 4444
+- (5) from Node 3333 to Node 4444
+[1651544770.270] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 1111
+[1651544770.270] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 3333
+[1651544770.270] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 4444
+[1651544770.270] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544759.403004
+- Received from 3333
+[1651544770.270] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544754.918513
+- Received from 3333
+[1651544770.271] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544759.403004
+- Received from 1111
+[1651544770.272] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544763.975785
+- Received from 1111
+[1651544770.273] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544759.403004
+- Received from 4444
+[1651544770.274] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544763.975785
+- Received from 4444
+[1651544770.275] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544754.918513
+- Received from 4444
+[1651544800.268] Node 2222 Routing Table
+- (1) -> Node 1111
+- (2) -> Node 3333
+- (7) -> Node 4444; Next hop -> Node 3333
+[1651544800.421] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544763.975785
+- Received from 3333
+[1651544800.648] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544754.918513
+- Received from 1111
+[1651544800.767] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 1111
+[1651544800.768] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 3333
+[1651544800.768] LSA of Node 2222 with sequence number 1651544759.403004 sent to Node 4444
+[1651544801.191] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 4444
+- Sequence number 1651544770.26575
+- Received from 4444
+
+----------------------------------------
+Node 3333
+----------------------------------------
+[1651544770.267] LSA of Node 4444 with sequence number 1651544770.26575 received from Node 2222
+[1651544770.267] Node 3333 Network Topology
+- (8) from Node 2222 to Node 4444
+- (5) from Node 3333 to Node 4444
+[1651544770.267] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 1111
+[1651544770.267] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 2222
+[1651544770.267] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 4444
+[1651544770.268] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 1111
+[1651544770.268] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 2222
+[1651544770.268] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 4444
+[1651544770.268] LSA of Node 2222 with sequence number 1651544759.403004 received from Node 2222
+[1651544770.268] Node 3333 Network Topology
+- (1) from Node 1111 to Node 2222
+- (2) from Node 2222 to Node 3333
+- (8) from Node 2222 to Node 4444
+- (5) from Node 3333 to Node 4444
+[1651544770.269] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 1111
+[1651544770.269] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 2222
+[1651544770.269] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 4444
+[1651544770.269] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 4444
+- Sequence number 1651544770.26575
+- Received from 1111
+[1651544770.269] LSA of Node 1111 with sequence number 1651544754.918513 received from Node 1111
+[1651544770.269] Node 3333 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+- (2) from Node 2222 to Node 3333
+- (8) from Node 2222 to Node 4444
+- (5) from Node 3333 to Node 4444
+[1651544770.269] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 1111
+[1651544770.269] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 2222
+[1651544770.269] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 4444
+[1651544770.269] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 4444
+- Sequence number 1651544770.26575
+- Received from 4444
+[1651544770.269] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544754.918513
+- Received from 2222
+[1651544770.270] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544763.975785
+- Received from 2222
+[1651544770.272] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544759.403004
+- Received from 1111
+[1651544770.272] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544763.975785
+- Received from 1111
+[1651544770.273] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544759.403004
+- Received from 4444
+[1651544770.275] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544763.975785
+- Received from 4444
+[1651544770.275] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544754.918513
+- Received from 4444
+[1651544800.269] Node 3333 Routing Table
+- (3) -> Node 1111; Next hop -> Node 2222
+- (2) -> Node 2222
+- (5) -> Node 4444
+[1651544800.420] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 1111
+[1651544800.420] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 2222
+[1651544800.421] LSA of Node 3333 with sequence number 1651544763.975785 sent to Node 4444
+[1651544800.648] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544754.918513
+- Received from 1111
+[1651544800.768] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544759.403004
+- Received from 2222
+[1651544801.191] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 4444
+- Sequence number 1651544770.26575
+- Received from 4444
+
+----------------------------------------
+Node 4444
+----------------------------------------
+[1651544770.266] LSA of Node 4444 with sequence number 1651544770.26575 sent to Node 2222
+[1651544770.268] LSA of Node 4444 with sequence number 1651544770.26575 sent to Node 3333
+[1651544770.271] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 4444
+- Sequence number 1651544770.26575
+- Received from 2222
+[1651544770.272] LSA of Node 2222 with sequence number 1651544759.403004 received from Node 2222
+[1651544770.273] Node 4444 Network Topology
+- (1) from Node 1111 to Node 2222
+- (2) from Node 2222 to Node 3333
+- (8) from Node 2222 to Node 4444
+[1651544770.273] LSA of Node 4444 with sequence number 1651544770.26575 sent to Node 2222
+[1651544770.273] LSA of Node 4444 with sequence number 1651544770.26575 sent to Node 3333
+[1651544770.273] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 4444
+- Sequence number 1651544770.26575
+- Received from 3333
+[1651544770.273] LSA of Node 3333 with sequence number 1651544763.975785 received from Node 3333
+[1651544770.274] Node 4444 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+- (2) from Node 2222 to Node 3333
+- (8) from Node 2222 to Node 4444
+- (5) from Node 3333 to Node 4444
+[1651544770.274] LSA of Node 4444 with sequence number 1651544770.26575 sent to Node 2222
+[1651544770.274] LSA of Node 4444 with sequence number 1651544770.26575 sent to Node 3333
+[1651544770.275] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544759.403004
+- Received from 3333
+[1651544770.275] LSA of Node 1111 with sequence number 1651544754.918513 received from Node 2222
+[1651544770.275] LSA of Node 4444 with sequence number 1651544770.26575 sent to Node 2222
+[1651544770.275] LSA of Node 4444 with sequence number 1651544770.26575 sent to Node 3333
+[1651544770.275] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544754.918513
+- Received from 3333
+[1651544770.276] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544763.975785
+- Received from 2222
+[1651544800.270] Node 4444 Routing Table
+- (8) -> Node 1111; Next hop -> Node 3333
+- (7) -> Node 2222; Next hop -> Node 3333
+- (5) -> Node 3333
+[1651544800.421] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544763.975785
+- Received from 3333
+[1651544800.768] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544759.403004
+- Received from 2222
+[1651544801.190] LSA of Node 4444 with sequence number 1651544770.26575 sent to Node 2222
+[1651544801.190] LSA of Node 4444 with sequence number 1651544770.26575 sent to Node 3333
+
+
+########################################
+LS Test 2 Output
+LS with cost change (from specs)
+########################################
+----------------------------------------
+Node 1111
+----------------------------------------
+[1651544959.904] LSA of Node 3333 with sequence number 1651544959.903427 received from Node 3333
+[1651544959.904] Node 1111 Network Topology
+- (50) from Node 1111 to Node 3333
+- (2) from Node 2222 to Node 3333
+[1651544959.904] LSA of Node 1111 with sequence number 1651544954.903403 sent to Node 2222
+[1651544959.904] LSA of Node 1111 with sequence number 1651544954.903403 sent to Node 3333
+[1651544959.904] LSA of Node 1111 with sequence number 1651544954.903403 sent to Node 2222
+[1651544959.904] LSA of Node 1111 with sequence number 1651544954.903403 sent to Node 3333
+[1651544959.906] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544959.903427
+- Received from 2222
+[1651544959.906] LSA of Node 2222 with sequence number 1651544956.984962 received from Node 2222
+[1651544959.906] Node 1111 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+- (2) from Node 2222 to Node 3333
+[1651544959.906] LSA of Node 1111 with sequence number 1651544954.903403 sent to Node 2222
+[1651544959.906] LSA of Node 1111 with sequence number 1651544954.903403 sent to Node 3333
+[1651544959.907] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544954.903403
+- Received from 2222
+[1651544959.907] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544954.903403
+- Received from 3333
+[1651544959.907] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544956.984962
+- Received from 3333
+[1651544989.906] Node 1111 Routing Table
+- (1) -> Node 2222
+- (3) -> Node 3333; Next hop -> Node 2222
+[1651544990.180] LSA of Node 1111 with sequence number 1651544954.903403 sent to Node 2222
+[1651544990.180] LSA of Node 1111 with sequence number 1651544954.903403 sent to Node 3333
+[1651544990.420] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544959.903427
+- Received from 3333
+[1651544990.596] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544956.984962
+- Received from 2222
+[1651544995.906] LSA of Node 2222 with sequence number 1651544995.906136 received from Node 2222
+[1651544995.907] Node 1111 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+- (60) from Node 2222 to Node 3333
+[1651544995.907] Node 1111 Routing Table
+- (1) -> Node 2222
+- (50) -> Node 3333
+[1651544995.907] LSA of Node 1111 with sequence number 1651544954.903403 sent to Node 2222
+[1651544995.907] LSA of Node 1111 with sequence number 1651544954.903403 sent to Node 3333
+[1651544995.908] LSA of Node 3333 with sequence number 1651544995.90677 received from Node 3333
+[1651544995.908] LSA of Node 1111 with sequence number 1651544954.903403 sent to Node 2222
+[1651544995.908] LSA of Node 1111 with sequence number 1651544954.903403 sent to Node 3333
+[1651544995.908] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544995.90677
+- Received from 2222
+[1651544995.908] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544995.906136
+- Received from 3333
+
+----------------------------------------
+Node 2222
+----------------------------------------
+[1651544959.904] LSA of Node 3333 with sequence number 1651544959.903427 received from Node 1111
+[1651544959.905] Node 2222 Network Topology
+- (50) from Node 1111 to Node 3333
+- (2) from Node 2222 to Node 3333
+[1651544959.905] LSA of Node 2222 with sequence number 1651544956.984962 sent to Node 1111
+[1651544959.905] LSA of Node 2222 with sequence number 1651544956.984962 sent to Node 3333
+[1651544959.905] LSA of Node 2222 with sequence number 1651544956.984962 sent to Node 1111
+[1651544959.905] LSA of Node 2222 with sequence number 1651544956.984962 sent to Node 3333
+[1651544959.906] LSA of Node 1111 with sequence number 1651544954.903403 received from Node 1111
+[1651544959.906] Node 2222 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+- (2) from Node 2222 to Node 3333
+[1651544959.906] LSA of Node 2222 with sequence number 1651544956.984962 sent to Node 1111
+[1651544959.906] LSA of Node 2222 with sequence number 1651544956.984962 sent to Node 3333
+[1651544959.907] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544959.903427
+- Received from 3333
+[1651544959.907] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544956.984962
+- Received from 1111
+[1651544959.907] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544954.903403
+- Received from 3333
+[1651544959.908] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544956.984962
+- Received from 3333
+[1651544989.906] Node 2222 Routing Table
+- (1) -> Node 1111
+- (2) -> Node 3333
+[1651544990.180] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544954.903403
+- Received from 1111
+[1651544990.420] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544959.903427
+- Received from 3333
+[1651544990.596] LSA of Node 2222 with sequence number 1651544956.984962 sent to Node 1111
+[1651544990.596] LSA of Node 2222 with sequence number 1651544956.984962 sent to Node 3333
+[1651544995.906] Node 3333 cost updated to 60
+[1651544995.906] Link value message received at Node 2222 from Node 3333
+[1651544995.906] LSA of Node 2222 with sequence number 1651544995.906136 sent to Node 1111
+[1651544995.906] LSA of Node 2222 with sequence number 1651544995.906136 sent to Node 3333
+[1651544995.906] Node 2222 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+- (60) from Node 2222 to Node 3333
+[1651544995.907] Node 2222 Routing Table
+- (1) -> Node 1111
+- (51) -> Node 3333; Next hop -> Node 1111
+[1651544995.907] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544995.906136
+- Received from 1111
+[1651544995.908] LSA of Node 3333 with sequence number 1651544995.90677 received from Node 3333
+[1651544995.908] LSA of Node 2222 with sequence number 1651544995.906136 sent to Node 1111
+[1651544995.908] LSA of Node 2222 with sequence number 1651544995.906136 sent to Node 3333
+[1651544995.908] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544995.90677
+- Received from 1111
+[1651544995.909] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544995.906136
+- Received from 3333
+
+----------------------------------------
+Node 3333
+----------------------------------------
+[1651544959.904] LSA of Node 3333 with sequence number 1651544959.903427 sent to Node 1111
+[1651544959.904] LSA of Node 3333 with sequence number 1651544959.903427 sent to Node 2222
+[1651544959.906] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544959.903427
+- Received from 1111
+[1651544959.906] LSA of Node 1111 with sequence number 1651544954.903403 received from Node 1111
+[1651544959.906] Node 3333 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+[1651544959.907] LSA of Node 3333 with sequence number 1651544959.903427 sent to Node 1111
+[1651544959.907] LSA of Node 3333 with sequence number 1651544959.903427 sent to Node 2222
+[1651544959.907] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544959.903427
+- Received from 2222
+[1651544959.907] LSA of Node 2222 with sequence number 1651544956.984962 received from Node 2222
+[1651544959.907] Node 3333 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+- (2) from Node 2222 to Node 3333
+[1651544959.907] LSA of Node 3333 with sequence number 1651544959.903427 sent to Node 1111
+[1651544959.907] LSA of Node 3333 with sequence number 1651544959.903427 sent to Node 2222
+[1651544959.908] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544956.984962
+- Received from 1111
+[1651544959.908] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544954.903403
+- Received from 2222
+[1651544989.905] Node 3333 Routing Table
+- (3) -> Node 1111; Next hop -> Node 2222
+- (2) -> Node 2222
+[1651544990.180] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 1111
+- Sequence number 1651544954.903403
+- Received from 1111
+[1651544990.419] LSA of Node 3333 with sequence number 1651544959.903427 sent to Node 1111
+[1651544990.420] LSA of Node 3333 with sequence number 1651544959.903427 sent to Node 2222
+[1651544990.596] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544956.984962
+- Received from 2222
+[1651544995.906] Node 2222 cost updated to 60
+[1651544995.906] Link value message sent from Node 3333 to Node 2222
+[1651544995.906] LSA of Node 2222 with sequence number 1651544995.906136 received from Node 2222
+[1651544995.907] Node 3333 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+- (60) from Node 2222 to Node 3333
+[1651544995.907] LSA of Node 3333 with sequence number 1651544995.90677 sent to Node 1111
+[1651544995.907] LSA of Node 3333 with sequence number 1651544995.90677 sent to Node 2222
+[1651544995.907] Node 3333 Routing Table
+- (50) -> Node 1111
+- (51) -> Node 2222; Next hop -> Node 1111
+[1651544995.908] LSA of Node 3333 with sequence number 1651544995.90677 sent to Node 1111
+[1651544995.908] LSA of Node 3333 with sequence number 1651544995.90677 sent to Node 2222
+[1651544995.909] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 2222
+- Sequence number 1651544995.906136
+- Received from 1111
+[1651544995.909] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544995.90677
+- Received from 1111
+[1651544995.909] DUPLICATE LSA packet received AND DROPPED:
+- LSA of node 3333
+- Sequence number 1651544995.90677
+- Received from 2222
+[1651544995.908] Node 3333 Network Topology
+- (1) from Node 1111 to Node 2222
+- (50) from Node 1111 to Node 3333
+- (60) from Node 2222 to Node 3333
+[1651544995.909] Node 3333 Routing Table
+- (50) -> Node 1111
+- (51) -> Node 2222; Next hop -> Node 1111
