@@ -313,7 +313,7 @@ class RouteNode:
             self.sent = True
             self.dv_broadcast()
             if self.cost_change:
-                t = threading.Timer(2.0, self.send_cost_change)
+                t = threading.Timer(30, self.send_cost_change)
                 t.start()
             self.print_routing()
 
@@ -335,7 +335,8 @@ class RouteNode:
 
                 table = b"TAB\n" + json.dumps(send_dv).encode() + b"\n"
 
-            print("Message sent from Node", self.port, "to Node", n)
+            ts = str(round(time.time(), 3)) 
+            print("["+ts+"]", "Message sent from Node", self.port, "to Node", n)
             sock.sendto(table, (self.ip, n))
 
     def dv_recv(self):
@@ -345,7 +346,8 @@ class RouteNode:
             body = body.decode().split("\n")
 
             if body[0] == "TAB":
-                print("Message received at Node", self.port, "from Node", addr[1])
+                ts = str(round(time.time(), 3)) 
+                print("["+ts+"]", "Message received at Node", self.port, "from Node", addr[1])
                 table = json.loads(body[1])
                 self.most_recent[addr[1]] = table
                 self.dv_compute(table, addr)
