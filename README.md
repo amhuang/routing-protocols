@@ -4,9 +4,11 @@ Name: Andrea Huang
 
 UNI: amh2341
 
-The file contains the project documentation, program features, usage scenarios, brief explanation of algorithms or data structures used, and the description of any additional features/functions you implemented. This should be a text file. You will lose points if you submit a PDF, .rtf, or any other format.
-
+---
 ## Usage
+
+This program is written in Python. Its usage is the same as that which is specified in the specs. `ROUTING_INTERVAL` for the link state algorithm is set to 30 at the top of `routenode.py.` `COST_CHANGE_DELAY` for the distance vector algorithm is set to 30 sec per the specs in the same place. The `update_interval` for the link state algorithm is provided as a command line argument.
+
 
 ## Implementation Overview
 
@@ -19,6 +21,7 @@ The file contains the project documentation, program features, usage scenarios, 
 - `self.topology`: A dictionary which stores the topology of graph with link as keys and costs as values. Used only with the link state algorithm. Format { (lower_port, higher_port) : cost, ... }
 - `self.recvd`: A dictionary which keeps track of LSAs received in order to check for duplicates. Format: `{seq num: origin port, ... }`
 
+---
 
 ## Distance Vector Implementation
 
@@ -41,16 +44,17 @@ In poisoned reverse mode, `dv_broadcast()`, the function that broadcasts a node'
 
 The function `dv_compute(table, addr)` computes the node's new distance vector off of the `table` (same format as a distance vector) received from `addr`. 
 
-It does so by looping through all the ports in `table` and applying the Bellman-Ford equation. If the port isn't in the distance vector, it adds it with the distance provided from `table` plus the distance of from the node to the sender with the address `addr`. Let this distance be `c` 
+It does so by looping through all the ports in `table` and applying the Bellman-Ford equation. If the port isn't in the distance vector, it adds it with the distance provided from `table` plus the distance of from the node to the sender with the address `addr`. Let this distance be `c`. 
 
-If the local distance vector has a former path to the port, it checks 3 conditions: if a direct path between the port and the receiving node is the shortest path, if a shorter non-direct path is found (with the Bellman-Ford equation), and if the former shortest path got longer due to a cost update (i.e. the sender `addr` is the next hop for a port in the distance vector).
+If the local distance vector has path to the port, it checks its original path against 3 conditions: if a direct path between the port and the receiving node is a shorter path, if a shorter non-direct path is found (with the Bellman-Ford equation), and if the former shortest path got longer due to a cost update (i.e. the sender `addr` is the next hop for a port in the distance vector).
 
 **Cost Update**
 
-When the cost update occurs, `send_cost_change()` (the same function called by the distance vector), a cost update command message is sent to the node on the other end of the link (neighbor with the highest port). The routing table is updated so that the cost to the neighbor with the highest port number is updated. 
+When the cost update occurs, `send_cost_change()` (the same function called by the distance vector), a cost update command message is sent to the node on the other end of the link (neighbor with the highest port). Then, `dv_cost_update(sender, cost, receiver)` is called to update the sender's routing table so that any paths involving the receiver of the cost change message are updated if there's a different shortest path. This is done by looking at the different  This updated shortest path is calculated by looking at the most recent distance vectors received from each port in `self.most_recent` and seeing if there's a shorter alternative to any path in currently in the routing table which bypasses the changed link.
 
-The receiver of a cost change message calls `recv_cost_change()`, which then calls `dv_cost_update(sender, cost)`. This looks at the most recent distance vectors sent from each port stored in `self.most_recent` and sees if there's a shorter path through one of those rather than through the path it currently has in its distance vector.
+The receiver of a cost change message calls `recv_cost_change()`, which then calls `dv_cost_update(sender, cost)`. This is the same function as described above, but this time updates any paths in the receiver's table going through the sender.
 
+---
 
 ## Link State Implementation
 
@@ -73,6 +77,8 @@ When the cost update occurs, `send_cost_change()` (the same function called by t
 
 The receiver of a cost change message calls `recv_cost_change()`, which similarly makes a new LSA, updates the topology, and recomputes the routing table at the receiving node. The receiving node broadcasts its new LSA to its neighbors.
 
+--- 
+
 ## Tests
 
 I tested all the required functionalities and error catching to the best of my ablities, and I have not found any bugs. 
@@ -81,7 +87,7 @@ The text output for tests are provided in the specs are provided in `test.txt`.
 
 ### Distance Vector Algorithm Tests
 
-Tests 1-3 are provided from the specs. Tests 4-5 are my own and test a network with a count-to-infinity problem in regular and poisoned reverse mode.
+Tests 1-3 are provided from the specs. Tests 4-6 are my own and test a network with a count-to-infinity problem in regular and poisoned reverse mode, as well as a network with 4 nodes.
 
 **Test 1: Regular DV (from specs)**
 ```
@@ -119,6 +125,14 @@ python3 routenode.py dv p [any-num] 2222 1111 2 3333 2
 python3 routenode.py dv p [any-num] 3333 1111 20 2222 2 last 25
 ```
 
+**Test 6: DV algorithm with cost change.**
+```
+python3 routenode.py dv r 30 1111 2222 1 3333 20
+python3 routenode.py dv r 30 2222 1111 1 3333 4 4444 2
+python3 routenode.py dv r 30 3333 1111 20 2222 4 4444 2
+python3 routenode.py dv r 30 4444 2222 2 3333 2 last 30
+```
+
 ### Link State Algorithm Tests
 
 Tests 1-2 are from the specs.
@@ -137,10 +151,10 @@ python3 routenode.py ls r 30 2222 1111 1 3333 2
 python3 routenode.py ls r 30 3333 1111 50 2222 2 last 60
 ```
 
-**Test 3: LS algorithm with cost change (from specs)**
+**Test 3: LS algorithm with cost change.**
 ```
-python3 routenode.py dv r 30 1111 2222 1 3333 20
-python3 routenode.py dv r 30 2222 1111 1 3333 4 4444 2
-python3 routenode.py dv r 30 3333 1111 20 2222 4 4444 2
-python3 routenode.py dv r 30 4444 2222 2 3333 2 last 30
+python3 routenode.py ls r 30 1111 2222 1 3333 20
+python3 routenode.py ls r 30 2222 1111 1 3333 4 4444 2
+python3 routenode.py ls r 30 3333 1111 20 2222 4 4444 2
+python3 routenode.py ls r 30 4444 2222 2 3333 2 last 30
 ```
